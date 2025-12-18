@@ -186,15 +186,25 @@
 
 **Network:**
 - UGREEN Proxmox: 192.168.40.60
-- Container 102 IP: 192.168.40.81
+- Container 102 IP: 192.168.40.82
 - Primary network: 192.168.40.x
 
 **Container 102 Specs:**
 - OS: Ubuntu 24.04 LTS
 - CPU: 4 cores
 - RAM: 4GB
-- Storage: 20GB
+- Storage: 20GB on nvme2tb (ZFS)
+  - ZFS pool: nvme2tb/subvol-102-disk-0
+  - Compression: LZ4 (~50% space savings)
+  - Auto-TRIM enabled
 - Autostart: Enabled
+
+**UGREEN Storage Layout:**
+- **System Drive:** 119GB NVMe (local-lvm) - Proxmox boot drive
+- **VM/LXC Storage:** 2TB WD_BLACK SN7100 NVMe (nvme2tb pool, ZFS)
+  - Used for: LXC 102 and other VM/LXC storage
+  - Benefits: Fast I/O, compression, snapshots, auto-TRIM
+- **Data Storage:** 4x SATA bays (for bulk storage)
 
 **Hardware Reference:**
 - Full hardware inventory: `/home/slesz/shared/projects/hardware/` (on homelab)
