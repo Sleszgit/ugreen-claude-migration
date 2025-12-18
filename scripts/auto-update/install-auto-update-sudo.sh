@@ -60,8 +60,8 @@ if sudo -n apt update --dry-run > /dev/null 2>&1; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "The auto-update script will run once per day on login."
-    echo "You can also run it manually: ~/.auto-update.sh"
-    echo "Log file: ~/.auto-update.log"
+    echo "You can also run it manually: ~/scripts/auto-update/.auto-update.sh"
+    echo "Log file: ~/logs/.auto-update.log"
     echo ""
 else
     echo ""

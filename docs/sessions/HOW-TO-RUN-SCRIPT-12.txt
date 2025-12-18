@@ -1,0 +1,175 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                  SCRIPT 12: QUICK EXECUTION GUIDE                 ║
+║             Notification Setup with ntfy.sh (OPTIONAL)            ║
+╚════════════════════════════════════════════════════════════════════╝
+
+📋 SCRIPT READY TO EXECUTE ✅
+═════════════════════════════════════════════════════════════════════
+
+Script Name:  12-notification-setup.sh
+Status:       ✅ READY
+Location:     /tmp/proxmox-temp/12-notification-setup.sh
+              (will also be on Proxmox host after push)
+
+
+🚀 HOW TO RUN (Pick ONE method)
+═════════════════════════════════════════════════════════════════════
+
+METHOD 1: Direct SSH Command (Easiest - Copy & Paste)
+──────────────────────────────────────────────────────
+
+From Windows PowerShell or MobaXterm, copy this exact command:
+
+  ssh -p 22022 -i C:\Users\jakub\.ssh\ugreen_key root@192.168.40.60 \
+    'bash /root/proxmox-hardening/12-notification-setup.sh'
+
+That's it! Script runs automatically. Wait for completion (~3 minutes).
+
+
+METHOD 2: SSH Then Run Manually
+────────────────────────────────
+
+  ssh -p 22022 -i C:\Users\jakub\.ssh\ugreen_key root@192.168.40.60
+  
+  # Then inside the SSH session:
+  bash /root/proxmox-hardening/12-notification-setup.sh
+
+
+METHOD 3: Via LXC 102 Container
+────────────────────────────────
+
+  ssh -i C:\Users\jakub\.ssh\ugreen_key sleszugreen@192.168.40.81
+  
+  # Then inside the container:
+  sudo bash /root/proxmox-hardening/12-notification-setup.sh
+
+
+⏱️ WHAT TO EXPECT
+═════════════════════════════════════════════════════════════════════
+
+Duration:     ~2-3 minutes
+Output:       Lots of [OK] and [SUCCESS] messages
+Final Status: "✅ Notification Setup Complete"
+Test Alert:   Script sends test notification at the end
+
+
+✅ WHAT THE SCRIPT DOES (Automated)
+═════════════════════════════════════════════════════════════════════
+
+1. Creates alert helper script
+2. Sets up SSH login notifications
+3. Configures hourly system health checks
+4. Integrates with Fail2ban
+5. Sets up SMART disk monitoring
+6. Configures security update alerts
+7. Sends test notification
+8. Displays instructions
+
+
+📱 AFTER SCRIPT COMPLETES (Only 2 Steps!)
+═════════════════════════════════════════════════════════════════════
+
+Step 1: Subscribe to Notifications
+
+  OPTION A: Web Browser (No App Needed)
+  ─────────────────────────────────────
+  1. Open: https://ntfy.sh/proxmox-ugreen-alerts
+  2. Keep page open in browser
+  3. Done! (you'll see notifications instantly)
+
+  OPTION B: Mobile App (Recommended)
+  ───────────────────────────────────
+  1. Install ntfy app:
+     - Android: https://play.google.com/store/apps/details?id=io.heckel.ntfy
+     - iOS: https://apps.apple.com/app/ntfy/id1625396347
+
+  2. Open app → Tap "+"
+
+  3. Enter topic: proxmox-ugreen-alerts
+
+  4. Save → Done!
+
+
+Step 2: Test It
+
+  Option A: SSH login (should trigger notification)
+    ssh -p 22022 -i ~/.ssh/ugreen_key root@192.168.40.60
+
+  Option B: Manual test
+    /usr/local/bin/send-proxmox-alert "Test" "low" "test"
+
+
+🔔 WHAT YOU'LL GET
+═════════════════════════════════════════════════════════════════════
+
+SSH Login Alerts:
+  "SSH Login: User root from IP 192.168.99.6 on ugreen"
+
+Fail2ban Alerts:
+  "IP 203.0.113.5 banned from sshd (attempt: 5/3)"
+
+System Health Alerts:
+  "High CPU usage on ugreen: 85%"
+
+Security Update Alerts:
+  "Security updates installed: 15 packages on ugreen"
+
+Disk Health Alerts:
+  "SMART Alert on /dev/sda: Self-test failed"
+
+
+❓ TROUBLESHOOTING
+═════════════════════════════════════════════════════════════════════
+
+If script fails to run:
+  1. Check SSH access: ssh -p 22022 root@192.168.40.60
+  2. Check directory exists: ssh root@192.168.40.60 'ls /root/proxmox-hardening/'
+  3. Check script exists: ssh root@192.168.40.60 'ls 12-notification-setup.sh'
+
+If no notifications received:
+  1. Check internet: ping ntfy.sh
+  2. Check topic URL: https://ntfy.sh/proxmox-ugreen-alerts
+  3. Check app notifications aren't muted
+  4. Test alert: /usr/local/bin/send-proxmox-alert "Test" "low" "test"
+
+
+📄 DETAILED DOCUMENTATION
+═════════════════════════════════════════════════════════════════════
+
+Full guide available at:
+  /tmp/proxmox-temp/README-SCRIPT-12.md
+
+Customization guide:
+  /tmp/NOTIFICATION-SETUP-INSTRUCTIONS.txt (created after script runs)
+
+
+✨ KEY POINTS
+═════════════════════════════════════════════════════════════════════
+
+✅ Completely FREE
+✅ No email passwords needed
+✅ No account signup required
+✅ Works on phone and desktop
+✅ Instant notifications
+✅ Fully automated
+✅ Can be disabled anytime
+✅ Optional (not required)
+
+
+═════════════════════════════════════════════════════════════════════
+
+READY TO RUN?
+
+Copy and paste this command into your terminal:
+
+ssh -p 22022 -i C:\Users\jakub\.ssh\ugreen_key root@192.168.40.60 \
+  'bash /root/proxmox-hardening/12-notification-setup.sh'
+
+Then wait for "✅ Notification Setup Complete" message.
+
+═════════════════════════════════════════════════════════════════════
+
+Script Status: ✅ READY FOR EXECUTION
+Created: December 13, 2025
+Model: Claude Haiku 4.5
+
