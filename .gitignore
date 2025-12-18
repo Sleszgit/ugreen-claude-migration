@@ -1,0 +1,52 @@
+# Secrets and tokens
+.github-token
+*.key
+*.pem
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+
+# Claude Code internal files
+.claude/.credentials.json
+.claude/.credentials.jso
+.claude/history.jsonl
+.claude/settings.json
+.claude/settings.local.json
+.claude/stats-cache.json
+.claude/claude.json
+.claude/claude.json.backup
+.claude/debug/
+.claude/file-history/
+.claude/plans/
+.claude/plugins/
+.claude/projects/
+.claude/shell-snapshots/
+.claude/statsig/
+.claude/telemetry/
+.claude/todos/
+.claude/session-env/
+
+# System files
+.bash_history
+.sudo_as_admin_successful
+.Xauthority
+.auto-update.lastrun
+
+# Config directories
+.cache/
+.config/
+.npm/
+.ssh/
+
+# System config files (keep tracked versions separate)
+.bashrc
+.profile
+.gitconfig
+
+# Logs
+logs/
+*.log
+
+# Node modules
+node_modules/
