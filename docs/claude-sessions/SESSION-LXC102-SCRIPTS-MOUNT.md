@@ -2,7 +2,7 @@
 
 **Date:** 2025-12-20
 **Purpose:** Create a shared folder for scripts between Proxmox host and LXC 102 container
-**Status:** Pre-implementation (analysis complete, awaiting execution)
+**Status:** ✅ COMPLETE - Mount is active and bidirectionally accessible
 
 ---
 
@@ -153,12 +153,30 @@ Both should show the same contents.
 
 ---
 
-## Notes for Next Session
+## Implementation Complete - 2025-12-20 16:13
+
+### What Was Done
+1. ✅ Directory `/nvme2tb/lxc102scripts/` created on Proxmox host
+2. ✅ Mount point added to LXC 102 config: `mp1: /nvme2tb/lxc102scripts,mp=/mnt/lxc102scripts`
+3. ✅ Container restarted successfully
+4. ✅ Mount verified as bidirectionally accessible:
+   - Files created in container visible on host
+   - Files created on host visible in container
+   - Full read/write access confirmed
+
+### Current Configuration
+- **Host path:** `/nvme2tb/lxc102scripts/`
+- **Container path:** `/mnt/lxc102scripts/`
+- **Permissions:** `777` (rwxrwxrwx) for unprivileged container access
+- **Ownership:** `sleszugreen:sleszugreen` on host
+
+### Notes for Future Use
 
 - This mount is persistent - will survive container restart
-- Scripts placed in `/mnt/lxc102scripts/` can be executed from Proxmox host
-- Permissions inherit from sleszugreen user ownership
-- No additional configuration needed after implementation
+- Scripts placed in `/mnt/lxc102scripts/` can be edited from inside container and executed from Proxmox host
+- Mount works bidirectionally - changes on either side are immediately visible on the other
+- Currently using permissive permissions (777) due to unprivileged container uid mapping
+- **TODO:** Investigate and implement proper uid mapping for better security (optional enhancement)
 
 ---
 
