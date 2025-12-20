@@ -72,6 +72,11 @@
 - Timezone: Europe/Warsaw
 - Date format: DD/MM/YYYY
 
+**Command Approval & Execution:**
+- For LXC 102 commands: Execute directly without asking (routine operations)
+- For system changes: Show command → get approval → execute yourself (don't ask user to run)
+- For Proxmox host commands: Always ask first
+
 ---
 
 ## Task Execution Standards
@@ -146,7 +151,9 @@
 **4. Execution**
 - **Sequential execution for write operations:**
   - Explain purpose in plain language before each task
-  - Provide exact command/file edit
+  - Provide exact command/file edit for approval
+  - **Get explicit approval before executing** (except for direct LXC 102 commands)
+  - **Execute the command yourself** using Bash tool - do not ask user to run it
   - Mark task as `in_progress` in TodoWrite
   - Mark as `completed` immediately after finishing
 - **Parallel execution allowed for:**
@@ -174,6 +181,560 @@
 - **Verification**: How success was confirmed
 - **Rollback**: Steps to revert changes
 - **Notes**: Additional context, warnings, or considerations
+
+---
+
+## Command Reference & Execution Guide
+
+### System Identification (Critical for Command Location)
+
+**Always identify where you are by the shell prompt hostname:**
+
+```
+ON PROXMOX HOST (Proxmox management):
+  Prompt: sleszugreen@ugreen:~$
+  - Root user: root@ugreen:~#
+  - Use: pveversion, pct, qm, pvesh commands
+  - All container/VM management commands run here
+
+IN LXC 102 CONTAINER (ugreen-ai-terminal):
+  Prompt: sleszugreen@ugreen-ai-terminal:~$
+  - Use: apt, npm, Claude Code, application-level commands
+  - Proxmox management commands NOT available here
+```
+
+**⚠️ CRITICAL:** Before providing ANY command, verify the prompt hostname matches the required location.
+
+---
+
+### Confirmed Directory Paths (LXC 102)
+
+These directories are confirmed to exist and can be referenced without verification:
+
+**Project & Work Directories:**
+- `~/projects/` - Active projects (ai-projects, nas-transfer, proxmox-hardening)
+- `~/projects/ai-projects/` - AI-related projects
+- `~/projects/nas-transfer/` - NAS transfer automation
+- `~/projects/proxmox-hardening/` - Proxmox security hardening
+
+**Script Directories:**
+- `~/scripts/` - Root directory for utility scripts
+- `~/scripts/auto-update/` - Auto-update system scripts
+- `~/scripts/auto-update/.auto-update.sh` - Main auto-update script
+- `~/scripts/samba/` - Samba/Windows access scripts
+- `~/scripts/ssh/` - SSH utilities
+- `~/scripts/nas/` - NAS file copy scripts
+
+**Documentation Directories:**
+- `~/docs/` - Documentation files
+- `~/docs/claude-sessions/` - Session notes and documentation
+- `~/docs/sessions/` - Alternative session location
+- `~/docs/hardware/` - Hardware documentation
+
+**Logging & Support:**
+- `~/logs/` - Log files
+- `~/logs/.auto-update.log` - Auto-update script log
+- `~/.claude/CLAUDE.md` - This configuration file
+
+**Important Configuration Files:**
+- `~/.github-token` - GitHub API token (gitignored)
+- `~/.bashrc` - Shell configuration
+- `~/.ssh/` - SSH keys and config directory
+
+**Shared Resources:**
+- `~/shared/` - Shared resources (when accessible)
+
+---
+
+### Command Location Matrix
+
+| Command Category | Location | Example | Notes |
+|------------------|----------|---------|-------|
+| **Proxmox Management** | HOST ONLY | `sudo pveversion` | pct, qm, pvesh, pveversion |
+| **Container Management** | HOST ONLY | `sudo pct exec 102 -- apt update` | Managing LXC 102 from host |
+| **System Packages** | IN CONTAINER | `apt update`, `apt upgrade` | When logged into ugreen-ai-terminal |
+| **Claude Code** | IN CONTAINER | `claude --version` | Updates via `npm update -g` |
+| **File Operations** | IN CONTAINER | `ls ~/docs/`, `cp file1 file2` | Local file work |
+| **Sudo Passwordless** | IN CONTAINER | `sudo -n npm update -g @anthropic-ai/claude-code` | Configured via sudoers |
+
+---
+
+### Direct Execution in LXC 102
+
+**Execute these commands directly without asking (routine operations in your container):**
+- ✅ Package management: `apt update`, `apt upgrade`, `apt install`
+- ✅ npm operations: `npm update -g`, `npm install -g`
+- ✅ File operations: `ls`, `cp`, `mkdir`, `rm`, `cat`, `grep`
+- ✅ Claude Code: `claude --version`, `claude` CLI commands
+- ✅ Read-only checks: `git status`, `ls -la`, `pwd`, etc.
+- ✅ System info: `uname -a`, `df -h`, `free -m`
+
+**Commands that REQUIRE approval first:**
+- ❌ Proxmox management: `pct`, `qm`, `pvesh` (HOST only - ask first)
+- ❌ Critical config changes: Editing `/etc/` files, systemd services
+- ❌ Destructive operations: `rm -rf`, clearing logs, deleting data
+- ❌ Multi-step operations with potential rollback needs
+
+**Workflow for approval-required commands:**
+1. Show command with explanation
+2. Get your approval
+3. Execute it myself with Bash tool (don't ask you to run it)
+4. Report results
+
+---
+
+### Proxmox Command Syntax Reference (Proxmox Host Only)
+
+#### pct - Container Management
+
+**pct exec** - Execute command inside container
+```bash
+pct exec <vmid> [<extra-args>] [OPTIONS]
+
+Examples:
+sudo pct exec 102 -- apt update
+sudo pct exec 102 -- npm update -g @anthropic-ai/claude-code
+sudo pct exec 102 -- bash -c "echo 'test' > /tmp/file.txt"
+
+Options:
+  --keep-env <boolean>  Keep environment variables
+```
+
+**pct enter** - Interactive shell in container
+```bash
+pct enter <vmid> [OPTIONS]
+
+Example:
+sudo pct enter 102
+
+Options:
+  --keep-env <boolean>  Keep environment variables
+```
+
+**pct push** - Copy file TO container
+```bash
+pct push <vmid> <file> <destination> [OPTIONS]
+
+Example:
+sudo pct push 102 /local/path/file.txt /container/path/file.txt
+
+Options:
+  --user <string>       File owner user (default: root)
+  --group <string>      File owner group (default: root)
+  --perms <string>      File permissions (default: 0644)
+```
+
+**pct pull** - Copy file FROM container
+```bash
+pct pull <vmid> <path> <destination> [OPTIONS]
+
+Example:
+sudo pct pull 102 /var/log/syslog /local/path/syslog
+
+Options:
+  --user <string>       File owner user
+  --group <string>      File owner group
+  --perms <string>      File permissions
+```
+
+**pct status** - Show container state
+```bash
+pct status <vmid> [OPTIONS]
+
+Example:
+sudo pct status 102
+sudo pct status 102 --verbose
+
+Options:
+  --verbose             Show detailed status
+```
+
+**pct list** - List all containers
+```bash
+pct list
+
+Shows: VMID, NAME, STATUS, NODE, CPU, MEMORY, DISK
+```
+
+**pct create** - Create new container
+```bash
+pct create <vmid> <ostemplate> [OPTIONS]
+
+Example:
+sudo pct create 103 local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst -hostname newcontainer -memory 2048
+
+Key OPTIONS:
+  -hostname <string>    Container hostname
+  -memory <integer>     Memory in MB
+  -swap <integer>       Swap in MB
+  -storage <string>     Storage pool
+  -net0 <string>        Network configuration
+  -mp0 <string>         Mount point
+  -rootfs <string>      Root filesystem size
+```
+
+**pct set** - Modify container configuration
+```bash
+pct set <vmid> [OPTIONS]
+
+Examples:
+sudo pct set 102 -memory 4096
+sudo pct set 102 -onboot 1
+sudo pct set 102 -hostname newhostname
+sudo pct set 102 -mp0 /mnt/bindmount,mp=/mnt/shared
+
+Key OPTIONS:
+  -memory <integer>     Memory in MB
+  -swap <integer>       Swap in MB
+  -onboot <boolean>     Start on boot (0/1)
+  -hostname <string>    Container hostname
+  -net0 <string>        Network config
+  -mp<N> <string>       Mount point
+```
+
+**pct destroy** - Delete container
+```bash
+pct destroy <vmid> [OPTIONS]
+
+Example:
+sudo pct destroy 102 --purge
+
+Options:
+  --force               Force destruction
+  --purge               Remove config and data
+  --destroy-unreferenced-disks  Delete unused volumes
+```
+
+**pct clone** - Copy container
+```bash
+pct clone <vmid> <newid> [OPTIONS]
+
+Example:
+sudo pct clone 102 103 -hostname cloned-container
+
+Options:
+  -hostname <string>    New container hostname
+  -storage <string>     Target storage pool
+  -full <boolean>       Full clone (1) or linked (0)
+```
+
+**pct migrate** - Move container to different node
+```bash
+pct migrate <vmid> <target> [OPTIONS]
+
+Example:
+sudo pct migrate 102 proxmoxnode2
+
+Options:
+  --online              Live migration (if supported)
+  --restart             Restart if live migration fails
+```
+
+---
+
+#### qm - Virtual Machine Management
+
+**qm start** - Start VM
+```bash
+qm start <vmid> [OPTIONS]
+
+Example:
+sudo qm start 100
+```
+
+**qm stop** - Forcefully stop VM
+```bash
+qm stop <vmid> [OPTIONS]
+
+Example:
+sudo qm stop 100
+```
+
+**qm shutdown** - Graceful VM shutdown
+```bash
+qm shutdown <vmid> [OPTIONS]
+
+Example:
+sudo qm shutdown 100 --timeout 60
+
+Options:
+  --timeout <integer>   Seconds to wait (default: 60)
+  --force               Force shutdown
+```
+
+**qm status** - Show VM status
+```bash
+qm status <vmid>
+
+Example:
+sudo qm status 100
+
+Output: running, stopped, paused, etc.
+```
+
+**qm list** - List all VMs
+```bash
+qm list [OPTIONS]
+
+Shows: VMID, NAME, STATUS, MEM(MB), BOOTDISK(GB), PID
+```
+
+**qm reboot** - Reboot VM
+```bash
+qm reboot <vmid> [OPTIONS]
+
+Example:
+sudo qm reboot 100
+
+Options:
+  --timeout <integer>   Seconds to wait (default: 60)
+```
+
+**qm suspend** - Pause VM (preserve state)
+```bash
+qm suspend <vmid> [OPTIONS]
+
+Example:
+sudo qm suspend 100
+```
+
+**qm resume** - Resume paused VM
+```bash
+qm resume <vmid> [OPTIONS]
+
+Example:
+sudo qm resume 100
+```
+
+**qm reset** - Hard reset VM
+```bash
+qm reset <vmid> [OPTIONS]
+
+Example:
+sudo qm reset 100
+```
+
+**qm create** - Create new VM
+```bash
+qm create <vmid> [OPTIONS]
+
+Example:
+sudo qm create 101 -name myvm -memory 2048 -sockets 2 -cores 2 -storage local
+
+Key OPTIONS:
+  -name <string>        VM name
+  -memory <integer>     Memory in MB
+  -sockets <integer>    CPU sockets
+  -cores <integer>      CPU cores per socket
+  -net0 <string>        Network config
+  -scsi0 <string>       SCSI disk
+  -ide2 <string>        IDE device (CD-ROM)
+```
+
+**qm destroy** - Delete VM
+```bash
+qm destroy <vmid> [OPTIONS]
+
+Example:
+sudo qm destroy 100 --purge
+
+Options:
+  --purge               Remove all related data
+  --force               Force destruction
+```
+
+---
+
+#### pvesh - Proxmox VE API Shell
+
+**pvesh get** - Query API (GET request)
+```bash
+sudo pvesh get <api_path> [OPTIONS] [FORMAT_OPTIONS]
+
+Examples:
+sudo pvesh get /nodes                          # List all nodes
+sudo pvesh get /nodes/ugreen                   # Get node info
+sudo pvesh get /nodes/ugreen/lxc               # List containers on node
+sudo pvesh get /nodes/ugreen/qemu              # List VMs on node
+sudo pvesh get /cluster/status                 # Cluster status
+```
+
+**pvesh set** - Modify via API (PUT request)
+```bash
+sudo pvesh set <api_path> [OPTIONS] [FORMAT_OPTIONS]
+
+Examples:
+sudo pvesh set /cluster/options -console html5
+sudo pvesh set /nodes/ugreen/config -maxlen 16384
+```
+
+**pvesh create** - Create resource via API (POST request)
+```bash
+sudo pvesh create <api_path> [OPTIONS]
+
+Example:
+sudo pvesh create /nodes/ugreen/lxc -vmid 105 -hostname container105 -storage local --password "pass"
+```
+
+**pvesh delete** - Delete resource (DELETE request)
+```bash
+sudo pvesh delete <api_path> [OPTIONS]
+
+Example:
+sudo pvesh delete /nodes/ugreen/lxc/105
+```
+
+**pvesh ls** - List child objects
+```bash
+sudo pvesh ls <api_path> [OPTIONS]
+
+Example:
+sudo pvesh ls /nodes/ugreen
+```
+
+**pvesh usage** - Show API endpoint documentation
+```bash
+sudo pvesh usage <api_path> [OPTIONS]
+
+Example:
+sudo pvesh usage /nodes/ugreen/lxc -v    # Verbose endpoint info
+
+Options:
+  -v                    Verbose (show all parameters)
+```
+
+**Common Format Options:**
+```bash
+--output-format json              # JSON output
+--output-format json-pretty       # Pretty-printed JSON
+--output-format text              # Text output
+--output-format yaml              # YAML output
+--human-readable                  # Format for human readability
+--quiet                           # Suppress output
+```
+
+---
+
+#### System Commands
+
+**pveversion** - Check Proxmox version
+```bash
+pveversion
+
+Output: pve-manager/9.1.2/... (running kernel: 6.17.4-1-pve)
+```
+
+**Firewall Management**
+```bash
+# Check firewall status
+sudo systemctl status pve-firewall.service
+
+# View firewall rules
+sudo iptables -L -n
+
+# Restart firewall (after config changes)
+sudo systemctl restart pve-firewall.service
+```
+
+---
+
+**Documentation Sources:**
+- [pct(1) Manual](https://pve.proxmox.com/pve-docs/pct.1.html)
+- [qm(1) Manual](https://pve.proxmox.com/pve-docs/qm.1.html)
+- [pvesh(1) Manual](https://pve.proxmox.com/pve-docs/pvesh.1.html)
+- [Proxmox VE API Documentation](https://pve.proxmox.com/wiki/Proxmox_VE_API)
+
+---
+
+### Environment Variables & Sudo
+
+**Sudo strips environment variables by default for security.** If a command needs environment variables:
+
+**Problem:**
+```bash
+sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
+# Error: sudo: sorry, you are not allowed to set the following environment variables: DEBIAN_FRONTEND
+```
+
+**Solution:**
+- Either allow in sudoers: `Defaults!/usr/bin/apt env_keep += "DEBIAN_FRONTEND"`
+- Or use passwordless commands only (already configured for your user)
+
+---
+
+### Sudoers Configuration (sleszugreen User)
+
+**General sudo access:**
+- User has full sudo access: `(ALL : ALL) ALL`
+- Requires password for most commands
+
+**Passwordless (NOPASSWD) commands:**
+```bash
+sudo npm update -g @anthropic-ai/claude-code        # Update Claude Code
+sudo apt update                                     # Update package list
+sudo apt upgrade -y                                 # Upgrade packages
+sudo apt autoremove -y                              # Remove unused packages
+```
+
+**Environment variable handling:**
+- `DEBIAN_FRONTEND=noninteractive` is allowed for apt commands
+- Use: `sudo apt upgrade -y` (DEBIAN_FRONTEND preserved automatically)
+
+**Proxmox host commands (when on Proxmox host):**
+- Require password: `sudo pct`, `sudo qm`, `sudo pvesh`
+- These are not configured for passwordless in this container
+
+**Summary for command planning:**
+- ✅ Package updates (apt) = passwordless
+- ✅ Claude Code updates (npm) = passwordless
+- ✅ File operations = based on permissions
+- ⚠️ Proxmox commands = require password
+- ⚠️ System config changes = require password
+- ⚠️ Service management (systemctl) = require password
+
+---
+
+### Destructive Command Workflow
+
+**Stop and ask user for explicit consent if command might have:**
+- Delete operations (rm, rm -rf)
+- Modify system config files
+- Restart/stop services (systemctl restart, pct destroy, qm destroy)
+- Overwrite existing files
+
+**Workflow for destructive commands in LXC 102:**
+1. Show the exact command with explanation of what it does
+2. **Identify files that need backup** - specify which files/directories
+3. **Ask for approval** - "Approve backup and execution?"
+4. **Execute backup myself** - `cp /original /original.bak` (I run this)
+5. **Execute destructive command myself** - (I run this, don't ask you to run it)
+6. **Report results** - show what was backed up and executed
+
+**Example workflow:**
+```
+This command will modify /etc/config.conf.
+
+Files to backup:
+  - /etc/config.conf → /etc/config.conf.BACKUP-YYYY-MM-DD
+
+After backup, will execute:
+  sudo sed -i 's/old/new/' /etc/config.conf
+
+Rollback available: sudo cp /etc/config.conf.BACKUP-YYYY-MM-DD /etc/config.conf
+
+Approve? [yes/no]
+```
+
+**Key principle:** You approve the action, I execute everything (backups + command).
+
+---
+
+### Automated checks (no need to ask):**
+- ✅ Command location: Always identify using "System Identification" guide (hostname in prompt)
+- ✅ Command syntax: Reference "Proxmox Command Syntax Reference" section
+- ✅ Directory paths: All verified and listed in "Confirmed Directory Paths"
+- ✅ Sudo permissions: Documented in "Sudoers Configuration"
+- ✅ Remember to always specify location (ON PROXMOX HOST / ON LXC 102 CONTAINER)
 
 ---
 
