@@ -210,6 +210,54 @@
 - Full hardware inventory: `/home/slesz/shared/projects/hardware/` (on homelab)
 - GitHub: https://github.com/Sleszgit/homelab-hardware
 
+**Proxmox Firewall Configuration:**
+- **Service:** `pve-firewall.service` (restart after config changes)
+- **Config file:** `/etc/pve/firewall/cluster.fw`
+- **Policy:** Default DROP incoming traffic (deny-by-default security)
+- **Notable:** Proxmox blocks SMB ports (445, 139) by default to prevent ransomware
+
+---
+
+## Samba/Windows Access
+
+**Status:** ✅ Configured and Working
+
+**Share Details:**
+- **Share Name:** `ugreen20tb`
+- **Path:** `/storage/Media` (20TB ZFS RAID1)
+- **Protocol:** SMB3 (Samba 4.22.6)
+- **User:** sleszugreen
+- **Authentication:** Samba password (set with `smbpasswd`)
+
+**Windows Access:**
+- **Server:** `\\192.168.40.60`
+- **Share:** `\\192.168.40.60\ugreen20tb`
+- **Map Drive Command:**
+  ```cmd
+  net use Z: \\192.168.40.60\ugreen20tb /user:sleszugreen /persistent:yes
+  ```
+- **Access from:** 192.168.99.6 (Windows desktop)
+
+**Firewall Rules Required:**
+For Windows clients on different subnet to access Samba, add these rules to `/etc/pve/firewall/cluster.fw`:
+```
+# Allow SMB (Samba) from Windows desktop for NAS access
+IN ACCEPT -source 192.168.99.6 -p tcp -dport 445 -log nolog
+IN ACCEPT -source 192.168.99.6 -p tcp -dport 139 -log nolog
+```
+
+Then restart firewall:
+```bash
+sudo systemctl restart pve-firewall.service
+```
+
+**Verify Rules Applied:**
+```bash
+sudo iptables -L -n | grep 445
+```
+
+Should show ACCEPT rules for 192.168.99.6 before any DROP rules.
+
 ---
 
 ## Claude Code Standard
