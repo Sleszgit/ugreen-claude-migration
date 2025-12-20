@@ -244,6 +244,12 @@ These directories are confirmed to exist and can be referenced without verificat
 **Shared Resources:**
 - `~/shared/` - Shared resources (when accessible)
 
+**LXC 102 Bind Mount (Proxmox Host ↔ Container):**
+- **Proxmox Host:** `/nvme2tb/lxc102scripts/` - Source directory on Proxmox host
+- **Container:** `/mnt/lxc102scripts/` - Bind mount point in LXC 102
+- **Purpose:** Shared access for scripts and files between Proxmox host and container
+- **Mount Config:** `mp1: /nvme2tb/lxc102scripts,mp=/mnt/lxc102scripts`
+
 ---
 
 ### Command Location Matrix
@@ -280,6 +286,26 @@ These directories are confirmed to exist and can be referenced without verificat
 2. Get your approval
 3. Execute it myself with Bash tool (don't ask you to run it)
 4. Report results
+
+---
+
+### Scripts in /nvme2tb/lxc102scripts (Proxmox Host)
+
+**Important:** Scripts stored in the bind mount directory (`/nvme2tb/lxc102scripts/`) that perform privileged operations **MUST be run with `sudo`** on the Proxmox host.
+
+**Examples of operations requiring sudo:**
+- ✅ NFS mounting: `sudo mount -t nfs`
+- ✅ Writing to `/storage/Media/` (ZFS dataset)
+- ✅ Creating logs in `/root/nas-transfer-logs/`
+- ✅ rsync to protected directories
+
+**Correct usage:**
+```bash
+# On Proxmox host
+sudo bash /nvme2tb/lxc102scripts/copy-volume3-archive.sh
+```
+
+**Important note:** When Claude Code creates scripts in the container's `/mnt/lxc102scripts/` bind mount, those scripts are automatically accessible on the Proxmox host at `/nvme2tb/lxc102scripts/` but will require `sudo` to execute if they perform privileged operations.
 
 ---
 
