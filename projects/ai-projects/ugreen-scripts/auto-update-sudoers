@@ -1,0 +1,10 @@
+# Allow sleszugreen to run auto-update commands without password
+# This file should be placed in /etc/sudoers.d/auto-update
+
+# Claude Code updates via npm
+sleszugreen ALL=(ALL) NOPASSWD: /usr/bin/npm update -g @anthropic-ai/claude-code
+
+# System package updates
+sleszugreen ALL=(ALL) NOPASSWD: /usr/bin/apt update
+sleszugreen ALL=(ALL) NOPASSWD: /usr/bin/apt upgrade -y
+sleszugreen ALL=(ALL) NOPASSWD: /usr/bin/apt autoremove -y

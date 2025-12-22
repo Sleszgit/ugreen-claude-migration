@@ -1,0 +1,21 @@
+# Hardware repository .gitignore
+
+# Sensitive information
+*password*
+*secret*
+*credential*
+*.key
+*.pem
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
