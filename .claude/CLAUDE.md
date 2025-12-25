@@ -211,29 +211,47 @@ IN LXC 102 CONTAINER (ugreen-ai-terminal):
 
 **Token Setup:** ✅ Configured (25 Dec 2025)
 
-A read-only API token is stored securely for accessing Proxmox host information:
+Two read-only API tokens are stored securely:
 
+#### Token 1: Cluster-Wide Reader (claude-reader@pam)
 ```
 Token File:        ~/.proxmox-api-token (gitignored, mode 600)
 Token ID:          claude-reader@pam!claude-token
 User:              claude-reader@pam
-Role:              PVEAuditor (read-only access)
-Permissions:       Query containers, VMs, nodes, status, logs
+Role:              PVEAuditor (read-only cluster access)
+Permissions:       Query all containers, VMs, nodes, status, logs
 Restrictions:      NO write/modify/delete operations
 ```
 
-**Usage Example:**
+#### Token 2: VM 100 Reader (vm100-reader@pam)
+```
+Token File:        ~/.proxmox-vm100-token (gitignored, mode 600)
+Token ID:          vm100-reader@pam!vm100-token
+User:              vm100-reader@pam
+Role:              PVEAuditor (read-only cluster access)
+Permissions:       Query VM 100 status, logs, resources
+Restrictions:      NO write/modify/delete operations
+```
+
+**Usage Examples:**
 ```bash
+# Query cluster status
 PROXMOX_TOKEN=$(cat ~/.proxmox-api-token)
 curl -k -H "Authorization: PVEAPIToken=claude-reader@pam!claude-token=$PROXMOX_TOKEN" \
   https://192.168.40.60:8006/api2/json/nodes/ugreen/status
+
+# Query VM 100 status
+VM100_TOKEN=$(cat ~/.proxmox-vm100-token)
+curl -k -H "Authorization: PVEAPIToken=vm100-reader@pam!vm100-token=$VM100_TOKEN" \
+  https://192.168.40.60:8006/api2/json/nodes/ugreen/qemu/100/status/current
 ```
 
 **Why This Approach:**
 - ✅ Zero risk of accidental modifications (read-only enforced at Proxmox level)
-- ✅ Token can be revoked instantly: `sudo pveum user token delete claude-reader@pam claude-token`
+- ✅ Tokens can be revoked instantly: `sudo pveum user token delete <user> <tokenid>`
 - ✅ All API calls are logged by Proxmox
 - ✅ Better than SSH: Safer, more auditable, no shell access
+- ✅ Separate tokens per purpose (cluster vs specific VM)
 
 ---
 
