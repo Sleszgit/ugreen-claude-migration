@@ -207,6 +207,36 @@ IN LXC 102 CONTAINER (ugreen-ai-terminal):
 
 ---
 
+### Proxmox API Access (Read-Only)
+
+**Token Setup:** ✅ Configured (25 Dec 2025)
+
+A read-only API token is stored securely for accessing Proxmox host information:
+
+```
+Token File:        ~/.proxmox-api-token (gitignored, mode 600)
+Token ID:          claude-reader@pam!claude-token
+User:              claude-reader@pam
+Role:              PVEAuditor (read-only access)
+Permissions:       Query containers, VMs, nodes, status, logs
+Restrictions:      NO write/modify/delete operations
+```
+
+**Usage Example:**
+```bash
+PROXMOX_TOKEN=$(cat ~/.proxmox-api-token)
+curl -k -H "Authorization: PVEAPIToken=claude-reader@pam!claude-token=$PROXMOX_TOKEN" \
+  https://192.168.40.60:8006/api2/json/nodes/ugreen/status
+```
+
+**Why This Approach:**
+- ✅ Zero risk of accidental modifications (read-only enforced at Proxmox level)
+- ✅ Token can be revoked instantly: `sudo pveum user token delete claude-reader@pam claude-token`
+- ✅ All API calls are logged by Proxmox
+- ✅ Better than SSH: Safer, more auditable, no shell access
+
+---
+
 ### Confirmed Directory Paths (LXC 102)
 
 These directories are confirmed to exist and can be referenced without verification:
