@@ -43,16 +43,135 @@
 - This varies based on model used and task complexity—treat as working estimate
 
 **Command Execution Clarity:**
-- **ALWAYS specify WHERE to run commands** (e.g., "ON WINDOWS DESKTOP:", "ON PROXMOX:")
-- Never assume user knows which terminal/machine to use
-- Be explicit about location for every command
+- **DEFAULT LOCATION: Always assume we are in LXC 102 (ugreen-ai-terminal) on UGREEN UNLESS user explicitly says otherwise**
+- Only use location prefixes (e.g., "ON PROXMOX HOST:", "ON WINDOWS:") when NOT in LXC 102
+- When user mentions a different location, acknowledge it clearly and use that location for all subsequent commands
+- Be explicit about location changes to avoid confusion
 
 **SSH & API Access (Important - 25 Dec 2025):**
 - ⚠️ **SSH from container → Proxmox host is NOT configured**
 - ⚠️ **SSH from homelab → UGREEN is NOT configured**
 - Always use Proxmox API instead with tokens: `~/.proxmox-api-token` (UGREEN), `~/.proxmox-homelab-token` (homelab)
-- Container to Proxmox API requires firewall rule: `IN ACCEPT -source 192.168.40.82 -p tcp -dport 8006`
 - For file transfers between systems when SSH not available: Use heredoc/cat method to create files directly, not SCP
+
+---
+
+### Proxmox API Access Setup (Container → Host) - CRITICAL FIX
+
+**⚠️ LESSON LEARNED (25 Dec 2025):**
+- **DON'T use `/etc/pve/firewall/cluster.fw` for container↔host API access**
+- Proxmox firewall config creates RETURN rules in custom chains, not direct ACCEPT
+- Result: Configuration looks correct but traffic is still blocked
+- **Solution: Use direct iptables rules instead**
+
+**Correct Setup (Permanent):**
+
+**ON PROXMOX HOST, run ONCE:**
+```bash
+sudo iptables -I INPUT 1 -s 192.168.40.82 -p tcp --dport 8006 -j ACCEPT
+```
+
+This creates:
+```
+ACCEPT     tcp  --  192.168.40.82        0.0.0.0/0            tcp dpt:8006
+```
+
+**Make Persistent:**
+```bash
+# Option 1: Add to /etc/pve/firewall/cluster.fw (BELOW other rules for override):
+echo "IN ACCEPT -source 192.168.40.82 -p tcp -dport 8006" >> /etc/pve/firewall/cluster.fw
+sudo systemctl restart pve-firewall.service
+
+# Option 2: Save iptables directly (if available):
+sudo iptables-save > /etc/iptables/rules.v4
+```
+
+**Verify Setup:**
+```bash
+# From container:
+bash /mnt/lxc102scripts/test-api-from-container.sh
+
+# Should show: "✅ API call succeeded!" and return Proxmox version
+```
+
+**Status (25 Dec 2025):** ✅ Properly configured and tested working
+
+---
+
+### Script Placement - CRITICAL (Apply Rigorously)
+
+**ALL utility scripts must be placed in the LXC 102 bind mount to be accessible from both container AND Proxmox host:**
+
+**Two paths point to the SAME directory:**
+```
+FROM CONTAINER (LXC 102):        /mnt/lxc102scripts/
+FROM PROXMOX HOST:               /nvme2tb/lxc102scripts/
+MOUNT CONFIGURATION:             mp1: /nvme2tb/lxc102scripts,mp=/mnt/lxc102scripts
+```
+
+**Placement Rule (RIGID - Do Not Deviate):**
+
+1. **When creating scripts in LXC 102 container:**
+   - Write to: `/mnt/lxc102scripts/scriptname.sh`
+   - Make executable: `chmod +x /mnt/lxc102scripts/scriptname.sh`
+   - User can immediately run on Proxmox host at: `/nvme2tb/lxc102scripts/scriptname.sh`
+
+2. **When referencing from Proxmox host:**
+   - Full path: `/nvme2tb/lxc102scripts/scriptname.sh`
+   - Execute: `sudo bash /nvme2tb/lxc102scripts/scriptname.sh`
+
+3. **When referencing from container:**
+   - Full path: `/mnt/lxc102scripts/scriptname.sh`
+   - Execute: `bash /mnt/lxc102scripts/scriptname.sh`
+
+**DO NOT create scripts:**
+- ❌ In `~/scripts/` for Proxmox host execution
+- ❌ In `/root/` on Proxmox host (unless they will NEVER be updated)
+- ❌ In `/tmp/` for persistent use
+- ❌ Anywhere outside the bind mount if they need Proxmox host access
+
+**Script Organization Within Bind Mount:**
+```
+/mnt/lxc102scripts/
+├── enable-proxmox-api-access.sh     ← Firewall setup (ALREADY EXISTS)
+├── vm100ugreen/                     ← VM 100 UGREEN hardening
+│   ├── hardening/
+│   │   ├── 00-pre-hardening-checks.sh
+│   │   ├── 01-ssh-hardening.sh
+│   │   └── ... (Phase A/B/C scripts)
+│   └── general/
+├── vm100homelab/                    ← Separate namespace for homelab VM 100
+├── transfer-scripts/                ← File transfer automation (future)
+└── utilities/                       ← Shared utilities
+```
+
+**Example Usage (Correct):**
+```bash
+# Creating script in container:
+cat > /mnt/lxc102scripts/my-script.sh << 'EOF'
+#!/bin/bash
+echo "test"
+EOF
+chmod +x /mnt/lxc102scripts/my-script.sh
+
+# Running from Proxmox host:
+sudo bash /nvme2tb/lxc102scripts/my-script.sh
+
+# Running from container:
+bash /mnt/lxc102scripts/my-script.sh
+```
+
+**⚠️ DO NOT:**
+```bash
+# WRONG - Creates file in container only:
+cat > ~/my-script.sh
+
+# WRONG - Tries to reference non-existent path:
+/nvme2tb/lxc102scripts/my-script.sh (when created in ~/)
+
+# WRONG - Tries to use container path on Proxmox host:
+sudo bash /mnt/lxc102scripts/my-script.sh (from Proxmox, should use /nvme2tb/)
+```
 
 **Security & Sensitive Information:**
 - **ALWAYS tell user if it's SAFE to paste** something in the chat
@@ -214,7 +333,9 @@ IN LXC 102 CONTAINER (ugreen-ai-terminal):
 
 ---
 
-### Proxmox API Access (Read-Only)
+### Proxmox API Access (Read-Only) - ✅ WORKING
+
+**⚠️ PREREQUISITE:** Firewall rule must be configured first (see "Proxmox API Access Setup" section above)
 
 **Token Setup:** ✅ Configured (25 Dec 2025)
 
@@ -240,7 +361,7 @@ Permissions:       Query VM 100 status, logs, resources
 Restrictions:      NO write/modify/delete operations
 ```
 
-**Usage Examples:**
+**Usage Examples (from container):**
 ```bash
 # Query cluster status
 PROXMOX_TOKEN=$(cat ~/.proxmox-api-token)
@@ -259,6 +380,7 @@ curl -k -H "Authorization: PVEAPIToken=vm100-reader@pam!vm100-token=$VM100_TOKEN
 - ✅ All API calls are logged by Proxmox
 - ✅ Better than SSH: Safer, more auditable, no shell access
 - ✅ Separate tokens per purpose (cluster vs specific VM)
+- ✅ Works from container to host with proper firewall setup
 
 ---
 
