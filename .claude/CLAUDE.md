@@ -47,6 +47,13 @@
 - Never assume user knows which terminal/machine to use
 - Be explicit about location for every command
 
+**SSH & API Access (Important - 25 Dec 2025):**
+- ⚠️ **SSH from container → Proxmox host is NOT configured**
+- ⚠️ **SSH from homelab → UGREEN is NOT configured**
+- Always use Proxmox API instead with tokens: `~/.proxmox-api-token` (UGREEN), `~/.proxmox-homelab-token` (homelab)
+- Container to Proxmox API requires firewall rule: `IN ACCEPT -source 192.168.40.82 -p tcp -dport 8006`
+- For file transfers between systems when SSH not available: Use heredoc/cat method to create files directly, not SCP
+
 **Security & Sensitive Information:**
 - **ALWAYS tell user if it's SAFE to paste** something in the chat
 - Clarify what information is safe vs sensitive
