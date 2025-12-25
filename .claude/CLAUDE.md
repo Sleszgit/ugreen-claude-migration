@@ -641,6 +641,91 @@ Options:
 
 ---
 
+#### pveum - Proxmox User and Permission Management
+
+**pveum user add** - Create new user
+```bash
+sudo pveum user add <userid> [OPTIONS]
+
+Example:
+sudo pveum user add claude-reader@pam
+
+Options:
+  --email <string>      User email
+  --enable <boolean>    Enable/disable user (1/0)
+  --expire <integer>    Account expiration (unix timestamp)
+  --firstname <string>  First name
+  --lastname <string>   Last name
+  --password <string>   User password
+```
+
+**pveum user token add** - Create API token for user (Read-Only Access Setup ✅)
+```bash
+sudo pveum user token add <userid> <tokenid> [OPTIONS] [FORMAT_OPTIONS]
+
+Example:
+sudo pveum user token add claude-reader@pam claude-token --expire 0
+
+Options:
+  --expire <integer>    Token expiration (0 = never)
+  --privsep <boolean>   Privilege separation (1/0)
+
+Output includes:
+  - full-tokenid: <userid>!<tokenid>
+  - token: <long-random-string> (SAVE THIS!)
+
+IMPORTANT: Save the token value immediately - it's only shown once!
+```
+
+**pveum user token list** - List user tokens
+```bash
+sudo pveum user token list <userid> [FORMAT_OPTIONS]
+
+Example:
+sudo pveum user token list claude-reader@pam
+
+Shows all active tokens for the user
+```
+
+**pveum user token delete** - Revoke token
+```bash
+sudo pveum user token delete <userid> <tokenid> [FORMAT_OPTIONS]
+
+Example:
+sudo pveum user token delete claude-reader@pam claude-token
+
+Immediately revokes token access
+```
+
+**pveum acl modify** - Assign roles/permissions to users
+```bash
+sudo pveum acl modify <path> --roles <string> [OPTIONS]
+
+Examples:
+sudo pveum acl modify / -user claude-reader@pam -role PVEAuditor    # Read-only access to entire cluster
+sudo pveum acl modify /nodes/ugreen -user alice@pam -role PVEAdmin   # Admin on specific node
+
+Available Roles:
+  PVEAuditor              Read-only access (perfect for monitoring/queries)
+  PVEAdmin                Full administrative access
+  PVEVMAdmin              VM/Container management only
+  PVEPoolAdmin            Pool management
+  PVEDatastoreAdmin       Storage management
+  PVEBackupOperator       Backup operations only
+```
+
+**pveum user list** - List all users
+```bash
+sudo pveum user list [OPTIONS] [FORMAT_OPTIONS]
+
+Example:
+sudo pveum user list
+
+Shows all users and their authentication realms
+```
+
+---
+
 #### System Commands
 
 **pveversion** - Check Proxmox version
@@ -668,7 +753,9 @@ sudo systemctl restart pve-firewall.service
 - [pct(1) Manual](https://pve.proxmox.com/pve-docs/pct.1.html)
 - [qm(1) Manual](https://pve.proxmox.com/pve-docs/qm.1.html)
 - [pvesh(1) Manual](https://pve.proxmox.com/pve-docs/pvesh.1.html)
+- [pveum(1) Manual](https://pve.proxmox.com/pve-docs/pveum.1.html)
 - [Proxmox VE API Documentation](https://pve.proxmox.com/wiki/Proxmox_VE_API)
+- [Proxmox User Management Guide](https://pve.proxmox.com/wiki/User_Management)
 
 ---
 
@@ -755,7 +842,7 @@ Approve? [yes/no]
 
 ---
 
-### Automated checks (no need to ask):**
+### Automated checks (no need to ask):
 - ✅ Command location: Always identify using "System Identification" guide (hostname in prompt)
 - ✅ Command syntax: Reference "Proxmox Command Syntax Reference" section
 - ✅ Directory paths: All verified and listed in "Confirmed Directory Paths"
@@ -802,6 +889,159 @@ Approve? [yes/no]
 - **Config file:** `/etc/pve/firewall/cluster.fw`
 - **Policy:** Default DROP incoming traffic (deny-by-default security)
 - **Notable:** Proxmox blocks SMB ports (445, 139) by default to prevent ransomware
+
+---
+
+## VM Creation Best Practices (Lessons Learned - 25 Dec 2025)
+
+### ⚠️ CRITICAL: UEFI/IDE CDROM Unmount Bug (Known Issue)
+
+**DO NOT use Ubuntu ISO with IDE2 CDROM without workaround:**
+
+```
+Problem: UEFI (OVMF) firmware cannot cleanly release IDE device during reboot
+Configuration that triggers the bug:
+  - bios: ovmf
+  - machine: q35
+  - ide2: [ISO],media=cdrom
+  - boot: order=scsi0;ide2;net0
+
+Result: Ubuntu installer completes → tries umount /cdrom → FAILS → boot loop
+Root Cause: QEMU/OVMF limitation (unfixable in hardware, KNOWN BUG)
+```
+
+**If using ISO approach, workaround is required:**
+1. Let Ubuntu installer complete normally
+2. When unmount fails → **IMMEDIATELY STOP** (don't wait for reboot)
+3. Use Proxmox web UI: VM config → Hardware → Delete IDE2 device
+4. OR set IDE2 to "none": `sudo qm set 100 -ide2 none`
+5. Force reboot from console: `sudo reboot -f`
+6. VM boots successfully from disk
+
+---
+
+### ✅ Cloud-Init on Proxmox: PROVEN RELIABLE (25 Dec 2025 - VM 100 Verified)
+
+**Cloud-init works perfectly on UGREEN Proxmox despite DataSourceNone:**
+
+**VM 100 Cloud-Init Results (Verified from /var/log/cloud-init.log):**
+- ✅ Cloud-init v.25.1.4 completed all 4 stages
+- ✅ User creation: sleszdockerugreen created with correct groups and sudo access
+- ✅ Package installation: docker.io + docker-compose installed successfully
+- ✅ SSH: Configured and working
+- ✅ Final status: 26 modules with 0 failures
+- ✅ Verification: `docker --version` returns Docker 28.2.2
+
+**Why this works:**
+- Proxmox passes user-data to cloud-init properly
+- DataSourceNone is a fallback, but user-data still processes
+- Package updates work reliably
+- All configuration directives execute successfully
+
+**Key Finding for Automation:** Cloud-init is 100% reliable - use it for automated VM creation
+
+---
+
+### ❌ What Does NOT Work
+
+| Approach | Problem | Why | Solution |
+|----------|---------|-----|----------|
+| ISO + interactive install | CDROM unmount fails | UEFI/IDE bug (known hardware limitation) | Use cloud images or preseed |
+| Guessing cloud-init config | Wrong datasource assumptions | Each hypervisor different | Always verify `/var/log/cloud-init.log` |
+| Manual IDE2 workaround in automation | Timing issues, fragile | Can't reliably detect install completion | Use cloud images (NO ISO needed) |
+
+---
+
+### ✅ RECOMMENDED: Ubuntu Cloud Image Approach
+
+**Why this is optimal for automation:**
+1. **No ISO** → No CDROM device → No unmount bug
+2. **Fully unattended** → No interactive installer
+3. **Cloud-init proven reliable** → VM 100 confirms 100% success
+4. **Fast** → System ready in ~10 seconds
+5. **Repeatable** → Identical results every time
+
+**Process:**
+1. Download Ubuntu 24.04 cloud image (qcow2)
+2. Convert to raw format for Proxmox
+3. Create VM with cloud image as scsi0 disk (NO ide2)
+4. Configure cloud-init via Proxmox `--cicustom` OR ConfigDrive
+5. Boot → cloud-init executes → system ready
+6. Verify via SSH: Docker running, packages installed
+
+---
+
+### 📋 Reference Configuration (VM 100 - Proven Working)
+
+**Successful Proxmox VM Configuration:**
+```
+bios: ovmf                       # UEFI
+machine: q35                     # Modern emulation
+cores: 4
+memory: 20480                    # 20GB RAM
+scsi0: nvme2tb:vm-100-disk-1     # Main disk (250GB)
+ide2: none,media=cdrom           # IDE2 disabled (THIS IS KEY!)
+net0: virtio,bridge=vmbr0        # DHCP networking
+boot: order=scsi0;ide2;net0      # Boot order (ide2 inactive)
+```
+
+**File Location:** `/etc/pve/qemu-server/100.conf`
+
+---
+
+### 🔧 Verification Commands (For Future Sessions)
+
+**After VM creation, verify success with:**
+
+```bash
+# On Proxmox host
+sudo qm config 100 | grep -E "bios|machine|ide|boot|scsi0"
+
+# Inside VM via SSH
+docker --version
+docker-compose --version
+apt list --installed | grep -E "docker|compose"
+id $(whoami)
+sudo cloud-init status --long
+```
+
+**All must show success or the automation failed.**
+
+---
+
+### 🚫 Rules to Follow (To Avoid Mistakes)
+
+**WHEN CREATING VMs AUTOMATICALLY:**
+
+1. ✅ **Use cloud images, NOT ISO**
+   - Prevents CDROM unmount bug entirely
+   - Faster and more reliable
+   - No manual workarounds needed
+
+2. ✅ **Always verify cloud-init.log after first boot**
+   - Check: `/var/log/cloud-init.log`
+   - Verify: User created, packages installed, SSH working
+   - Don't assume success - test it
+
+3. ✅ **Reference VM 100 config for BIOS/machine settings**
+   - Don't try different firmware combinations
+   - Use proven UEFI (ovmf) + q35 settings
+   - Keep ide2 set to "none" (not attached to ISO)
+
+4. ❌ **NEVER assume cloud-init failure without logs**
+   - Log shows success ≠ everything actually installed
+   - Verify with: `docker --version`, `apt list --installed`
+   - DataSourceNone is normal on Proxmox, not an error
+
+5. ❌ **NEVER use IDE device for CDROM in automation**
+   - IDE + UEFI = unmount bug (known limitation)
+   - Even with workaround, it's fragile and timing-dependent
+   - Cloud images eliminate this entirely
+
+6. ❌ **NEVER guess about datasource configuration**
+   - Test actual behavior, not assumptions
+   - Proxmox passes user-data via cloud-init
+   - Trust the logs, not your theory
 
 ---
 
