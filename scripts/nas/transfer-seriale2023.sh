@@ -1,154 +1,228 @@
 #!/bin/bash
 
-# Transfer Seriale 2023 from 920 NAS to UGREEN
-# Smart script: automatically detects and excludes already-transferred shows
-# Execution: sudo bash /nvme2tb/lxc102scripts/transfer-seriale2023.sh
-# Date: 26 Dec 2025
+################################################################################
+# TRANSFER SCRIPT: Seriale 2023 (920 NAS → UGREEN seriale2023 ZFS pool)
+# Purpose: Transfer TV shows from 920 NAS, skipping 363 already on UGREEN
+# Source: 920 NAS /volume1/Seriale 2023/Seriale 2023/ (1436 folders)
+# Target: UGREEN /seriale2023/ (ZFS pool root)
+# Skip:   Any shows already in /storage/Media/series920part/ (363 folders)
+# Result: Transfer ~1073 new shows to /seriale2023/
+################################################################################
 
-set -e
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-echo -e "${BLUE}=== Seriale 2023 Transfer Script ===${NC}"
-echo "Starting at: $(date)"
-echo ""
+set -e  # Exit on any error
 
 # Configuration
 NAS_IP="192.168.40.20"
-NAS_SOURCE="/volume1/Seriale 2023"
-NAS_MOUNT_PATH="/mnt/920-nfs-seriale"
-UGREEN_TARGET="/seriale2023"
-TEMP_DIR="/tmp/seriale2023-transfer"
-LOG_FILE="/var/log/seriale2023-transfer.log"
+NAS_SOURCE_PATH="/volume1/Seriale 2023"
+NAS_TV_SHOWS_SUBDIR="Seriale 2023"  # Nested folder containing actual TV shows
+TARGET_POOL="/seriale2023"
+EXISTING_SHOWS="/storage/Media/series920part"  # Already-transferred shows to SKIP
+TEMP_MOUNT="/tmp/920-seriale2023-mount"
+EXCLUDE_FILE="/tmp/rsync-exclude-seriale2023-$(date +%s).txt"
+LOG_FILE="/root/nas-transfer-logs/transfer-seriale2023-$(date +%Y%m%d-%H%M%S).log"
 
-# Create temp directory
-mkdir -p "$TEMP_DIR"
-mkdir -p "/var/log"
+# Create log directory
+mkdir -p /root/nas-transfer-logs
 
-echo "[$(date)] Transfer started" >> "$LOG_FILE"
-
-# Step 1: Detect series920 location on UGREEN
-echo -e "${BLUE}[STEP 1]${NC} Detecting series920 folder location on UGREEN..."
-
-SERIES920_PATH=""
-if [ -d "$UGREEN_TARGET/series920" ]; then
-    SERIES920_PATH="$UGREEN_TARGET/series920"
-    echo -e "${GREEN}✓ Found: $SERIES920_PATH${NC}"
-elif [ -d "/storage/series920" ]; then
-    SERIES920_PATH="/storage/series920"
-    echo -e "${GREEN}✓ Found: $SERIES920_PATH${NC}"
-else
-    echo -e "${YELLOW}⚠ series920 folder not found in either location${NC}"
-    echo "    Checking available paths:"
-    echo "    - $UGREEN_TARGET exists: $([ -d "$UGREEN_TARGET" ] && echo 'YES' || echo 'NO')"
-    echo "    - /storage exists: $([ -d "/storage" ] && echo 'YES' || echo 'NO')"
-    SERIES920_PATH="$UGREEN_TARGET/series920"
-    echo "    Using default target: $SERIES920_PATH"
-fi
-
-# Step 2: Mount 920 NAS
+echo "================================================================================"
+echo "SERIALE 2023 TRANSFER SCRIPT"
+echo "================================================================================"
+echo "[$(date)] Starting transfer initialization..." | tee -a "$LOG_FILE"
 echo ""
-echo -e "${BLUE}[STEP 2]${NC} Mounting 920 NAS volume1 via NFS..."
 
-if mountpoint -q "$NAS_MOUNT_PATH"; then
-    echo -e "${YELLOW}⚠ Already mounted at $NAS_MOUNT_PATH${NC}"
-else
-    mkdir -p "$NAS_MOUNT_PATH"
-    if mount -t nfs "$NAS_IP:$NAS_SOURCE" "$NAS_MOUNT_PATH"; then
-        echo -e "${GREEN}✓ Mounted successfully${NC}"
-    else
-        echo -e "${RED}✗ Mount failed!${NC}"
-        exit 1
-    fi
-fi
-
-# Verify mount
-if [ -d "$NAS_MOUNT_PATH" ]; then
-    NAS_FOLDERS=$(ls -1 "$NAS_MOUNT_PATH" | wc -l)
-    echo "  Folders in 920 NAS: $NAS_FOLDERS"
-else
-    echo -e "${RED}✗ Mount verification failed${NC}"
+# Step 1: Verify target ZFS pool exists and is accessible
+echo "[STEP 1] Verifying target ZFS pool..."
+if [ ! -d "$TARGET_POOL" ]; then
+    echo "ERROR: Target pool $TARGET_POOL does not exist!" | tee -a "$LOG_FILE"
     exit 1
 fi
-
-# Step 3: Get folder lists
+echo "✓ Target pool exists: $TARGET_POOL" | tee -a "$LOG_FILE"
+echo "  Available space: $(df -h $TARGET_POOL | tail -1 | awk '{print $4}')" | tee -a "$LOG_FILE"
 echo ""
-echo -e "${BLUE}[STEP 3]${NC} Comparing folder lists..."
 
-# Get folders from 920 NAS
-echo "  Reading 920 NAS folders..."
-ls -1 "$NAS_MOUNT_PATH" > "$TEMP_DIR/nas920-folders.txt"
-echo "  Total folders on 920: $(wc -l < "$TEMP_DIR/nas920-folders.txt")"
-
-# Get folders from UGREEN (if series920 exists)
-if [ -d "$SERIES920_PATH" ]; then
-    echo "  Reading UGREEN series920 folders..."
-    ls -1 "$SERIES920_PATH" > "$TEMP_DIR/ugreen-folders.txt" 2>/dev/null || true
-    UGREEN_COUNT=$(wc -l < "$TEMP_DIR/ugreen-folders.txt")
-    echo "  Total folders on UGREEN: $UGREEN_COUNT"
+# Step 2: Check for already-transferred shows
+echo "[STEP 2] Checking for already-transferred shows..."
+if [ -d "$EXISTING_SHOWS" ]; then
+    EXISTING_COUNT=$(ls -1 "$EXISTING_SHOWS" 2>/dev/null | wc -l)
+    echo "✓ Found $EXISTING_COUNT shows already on UGREEN in $EXISTING_SHOWS" | tee -a "$LOG_FILE"
 else
-    echo "  UGREEN series920 doesn't exist yet (first transfer)"
-    > "$TEMP_DIR/ugreen-folders.txt"
-    echo "  Total folders on UGREEN: 0"
+    EXISTING_COUNT=0
+    echo "⚠ Directory $EXISTING_SHOWS not found (no shows to skip)" | tee -a "$LOG_FILE"
+fi
+echo ""
+
+# Step 3: Create and prepare temporary mount point
+echo "[STEP 3] Preparing NFS mount point..."
+if [ ! -d "$TEMP_MOUNT" ]; then
+    mkdir -p "$TEMP_MOUNT"
+    echo "✓ Created mount directory: $TEMP_MOUNT" | tee -a "$LOG_FILE"
+else
+    echo "✓ Mount directory already exists: $TEMP_MOUNT" | tee -a "$LOG_FILE"
+fi
+echo ""
+
+# Step 4: Mount NFS share
+echo "[STEP 4] Mounting 920 NAS via NFS..."
+if mountpoint -q "$TEMP_MOUNT"; then
+    echo "⚠ Already mounted, unmounting first..." | tee -a "$LOG_FILE"
+    umount "$TEMP_MOUNT" 2>/dev/null || true
 fi
 
-# Step 4: Generate exclude list
-echo ""
-echo -e "${BLUE}[STEP 4]${NC} Generating exclude list..."
-
-# Create exclude file with folders that already exist on UGREEN
-> "$TEMP_DIR/rsync-exclude.txt"
-EXCLUDE_COUNT=0
-
-while IFS= read -r folder; do
-    if grep -q "^${folder}$" "$TEMP_DIR/ugreen-folders.txt"; then
-        echo "$folder" >> "$TEMP_DIR/rsync-exclude.txt"
-        EXCLUDE_COUNT=$((EXCLUDE_COUNT + 1))
-        echo "  Excluding: $folder (already on UGREEN)"
-    fi
-done < "$TEMP_DIR/nas920-folders.txt"
-
-echo -e "${GREEN}✓ Will exclude $EXCLUDE_COUNT folders${NC}"
-COPY_COUNT=$(($(wc -l < "$TEMP_DIR/nas920-folders.txt") - EXCLUDE_COUNT))
-echo "  Will copy: $COPY_COUNT folders"
-
-# Step 5: Display summary before transfer
-echo ""
-echo -e "${YELLOW}=== Transfer Summary ===${NC}"
-echo "  Source: $NAS_IP:$NAS_SOURCE"
-echo "  Target: $SERIES920_PATH"
-echo "  Folders to copy: $COPY_COUNT"
-echo "  Folders to skip: $EXCLUDE_COUNT"
-echo ""
-
-if [ $COPY_COUNT -eq 0 ]; then
-    echo -e "${GREEN}✓ All folders already transferred!${NC}"
-    echo "  No transfer needed."
+if mount -t nfs -o ro,soft,timeo=30,retrans=3 "$NAS_IP:$NAS_SOURCE_PATH" "$TEMP_MOUNT"; then
+    echo "✓ NFS mount successful" | tee -a "$LOG_FILE"
 else
-    echo -e "${YELLOW}Ready to transfer $COPY_COUNT folders${NC}"
-    echo ""
-    echo "Review the plan above. To proceed with the transfer:"
-    echo "  1. Check the excluded folders list below"
-    echo "  2. Run: sudo rsync -av --exclude-from='$TEMP_DIR/rsync-exclude.txt' '$NAS_MOUNT_PATH/' '$SERIES920_PATH/'"
-    echo ""
-    echo "Folders that will be EXCLUDED (already on UGREEN):"
-    if [ -s "$TEMP_DIR/rsync-exclude.txt" ]; then
-        cat "$TEMP_DIR/rsync-exclude.txt" | sed 's/^/    - /'
-    else
-        echo "    (none)"
-    fi
-    echo ""
-    echo "Folders that will be COPIED from 920 NAS:"
-    grep -v -f "$TEMP_DIR/ugreen-folders.txt" "$TEMP_DIR/nas920-folders.txt" | sed 's/^/    + /' || true
+    echo "ERROR: Failed to mount NFS share!" | tee -a "$LOG_FILE"
+    exit 1
+fi
+echo ""
+
+# Step 5: Verify mount contents and count source folders
+echo "[STEP 5] Analyzing source folders on 920 NAS..."
+if [ ! -d "$TEMP_MOUNT/$NAS_TV_SHOWS_SUBDIR" ]; then
+    echo "ERROR: Expected folder not found at: $TEMP_MOUNT/$NAS_TV_SHOWS_SUBDIR" | tee -a "$LOG_FILE"
+    umount "$TEMP_MOUNT"
+    exit 1
+fi
+SOURCE_COUNT=$(ls -1 "$TEMP_MOUNT/$NAS_TV_SHOWS_SUBDIR/" 2>/dev/null | grep -v "^@" | grep -v "^#" | grep -v "do skasowania" | wc -l)
+echo "✓ Found $SOURCE_COUNT TV show folders on 920 NAS" | tee -a "$LOG_FILE"
+echo ""
+
+# Step 6: Create rsync exclude list
+echo "[STEP 6] Creating exclusion list from already-transferred shows..."
+cat > "$EXCLUDE_FILE" << 'SYSEOF'
+@eaDir
+#recycle
+do skasowania
+.DS_Store
+Thumbs.db
+.*
+SYSEOF
+
+# Add the 363 already-transferred shows to exclude list
+if [ $EXISTING_COUNT -gt 0 ]; then
+    echo "Adding $EXISTING_COUNT already-transferred shows to exclusion list..." | tee -a "$LOG_FILE"
+    ls -1 "$EXISTING_SHOWS" 2>/dev/null | while read -r show; do
+        echo "$show"
+    done >> "$EXCLUDE_FILE"
 fi
 
+EXCLUDE_COUNT=$(wc -l < "$EXCLUDE_FILE")
+echo "✓ Exclusion list created with $EXCLUDE_COUNT entries" | tee -a "$LOG_FILE"
+echo "  (System folders + $EXISTING_COUNT already-transferred shows)" | tee -a "$LOG_FILE"
 echo ""
-echo "[$(date)] Analysis complete" >> "$LOG_FILE"
-echo "Temp files saved in: $TEMP_DIR"
-echo "Log file: $LOG_FILE"
 
+# Step 7: Calculate how many shows need to be transferred
+SHOWS_TO_TRANSFER=$((SOURCE_COUNT - EXISTING_COUNT))
+
+# Step 8: Calculate expected transfer size
+echo "[STEP 6.5] Calculating expected transfer size..."
+TOTAL_NAS_SIZE=$(du -sh "$TEMP_MOUNT/$NAS_TV_SHOWS_SUBDIR/" 2>/dev/null | awk '{print $1}')
+if [ -z "$TOTAL_NAS_SIZE" ]; then
+    EXPECTED_SIZE="~12.8TB (estimated)"
+else
+    # Use awk to calculate proportional transfer size
+    EXPECTED_SIZE=$(du -sb "$TEMP_MOUNT/$NAS_TV_SHOWS_SUBDIR/" 2>/dev/null | awk -v shows="$SHOWS_TO_TRANSFER" -v total="$SOURCE_COUNT" '{printf "%.1f", ($1 / total * shows / 1099511627776)}')
+    EXPECTED_SIZE="${EXPECTED_SIZE}TB (estimated)"
+fi
+
+echo "✓ Total 920 NAS size: $TOTAL_NAS_SIZE" | tee -a "$LOG_FILE"
+echo "✓ Expected transfer size: $EXPECTED_SIZE" | tee -a "$LOG_FILE"
+echo ""
+
+# Step 9: Show transfer plan
+echo "[STEP 7] TRANSFER PLAN"
+echo "================================================================================"
+echo "Source:  $NAS_IP:$NAS_SOURCE_PATH/$NAS_TV_SHOWS_SUBDIR/" | tee -a "$LOG_FILE"
+echo "Target:  $TARGET_POOL/" | tee -a "$LOG_FILE"
+echo "Method:  rsync with checksums" | tee -a "$LOG_FILE"
+echo ""
+echo "Folders on 920 NAS:         $SOURCE_COUNT" | tee -a "$LOG_FILE"
+echo "Already on UGREEN (skip):   $EXISTING_COUNT" | tee -a "$LOG_FILE"
+echo "Folders to transfer (new):  $SHOWS_TO_TRANSFER" | tee -a "$LOG_FILE"
+echo "Expected data size:         $EXPECTED_SIZE" | tee -a "$LOG_FILE"
+echo ""
+echo "Transfer characteristics:" | tee -a "$LOG_FILE"
+echo "  - Resume-capable: YES (safe to interrupt and resume)" | tee -a "$LOG_FILE"
+echo "  - Checksum verification: YES (ensures complete transfer)" | tee -a "$LOG_FILE"
+echo "  - Progress reporting: YES (real-time transfer speed)" | tee -a "$LOG_FILE"
+echo "  - Smart exclude: YES (skips 363 already-transferred + system files)" | tee -a "$LOG_FILE"
+echo ""
+echo "================================================================================"
+echo ""
+
+# Step 10: Ask for confirmation
+echo "⚠ READY TO START TRANSFER"
+echo "This will copy ~$SHOWS_TO_TRANSFER TV show folders (~${EXPECTED_SIZE})"
+echo "Do you want to proceed? (yes/no)"
+read -r confirmation
+if [ "$confirmation" != "yes" ]; then
+    echo "Transfer cancelled by user" | tee -a "$LOG_FILE"
+    umount "$TEMP_MOUNT"
+    exit 0
+fi
+echo ""
+
+# Step 10: Execute rsync transfer
+echo "[STEP 8] EXECUTING TRANSFER..."
+echo "Transfer started at $(date)" | tee -a "$LOG_FILE"
+echo "================================================================================" | tee -a "$LOG_FILE"
+echo ""
+
+rsync -avh \
+    --checksum \
+    --partial \
+    --progress \
+    --exclude-from="$EXCLUDE_FILE" \
+    "$TEMP_MOUNT/$NAS_TV_SHOWS_SUBDIR/" \
+    "$TARGET_POOL/" \
+    | tee -a "$LOG_FILE"
+
+RSYNC_EXIT_CODE=$?
+
+echo ""
+echo "================================================================================" | tee -a "$LOG_FILE"
+
+# Step 10: Verify and report results
+echo "[STEP 9] VERIFYING TRANSFER..."
+NEW_TARGET_COUNT=$(ls -1 "$TARGET_POOL/" 2>/dev/null | wc -l)
+TRANSFERRED=$((NEW_TARGET_COUNT - TARGET_FOLDERS))
+
+echo "✓ Transfer completed" | tee -a "$LOG_FILE"
+echo "  Rsync exit code: $RSYNC_EXIT_CODE" | tee -a "$LOG_FILE"
+echo "  Folders before: $TARGET_FOLDERS" | tee -a "$LOG_FILE"
+echo "  Folders now:    $NEW_TARGET_COUNT" | tee -a "$LOG_FILE"
+echo "  Folders added:  $TRANSFERRED" | tee -a "$LOG_FILE"
+echo ""
+
+# Step 11: Cleanup
+echo "[STEP 10] CLEANUP..."
+echo "Unmounting NFS share..."
+if umount "$TEMP_MOUNT"; then
+    echo "✓ NFS unmounted successfully" | tee -a "$LOG_FILE"
+    rmdir "$TEMP_MOUNT" 2>/dev/null || true
+else
+    echo "⚠ Warning: Could not unmount NFS (may be in use)" | tee -a "$LOG_FILE"
+fi
+
+rm -f "$EXCLUDE_FILE"
+echo ""
+
+# Step 12: Final summary
+echo "================================================================================"
+echo "TRANSFER SUMMARY"
+echo "================================================================================"
+echo "Status:           $([ $RSYNC_EXIT_CODE -eq 0 ] && echo 'SUCCESS' || echo 'COMPLETED WITH WARNINGS')" | tee -a "$LOG_FILE"
+echo "Folders copied:   $TRANSFERRED" | tee -a "$LOG_FILE"
+echo "Total on target:  $NEW_TARGET_COUNT" | tee -a "$LOG_FILE"
+echo "Duration:         See log file for details" | tee -a "$LOG_FILE"
+echo "Log file:         $LOG_FILE" | tee -a "$LOG_FILE"
+echo ""
+echo "Next steps:" | tee -a "$LOG_FILE"
+echo "  1. Verify folders copied correctly: ls -lah $TARGET_POOL | head -20" | tee -a "$LOG_FILE"
+echo "  2. Check disk usage: df -h $TARGET_POOL" | tee -a "$LOG_FILE"
+echo "  3. Review log: tail -100 $LOG_FILE" | tee -a "$LOG_FILE"
+echo ""
+echo "Transfer completed at $(date)" | tee -a "$LOG_FILE"
+echo "================================================================================"
+
+exit $RSYNC_EXIT_CODE
