@@ -166,15 +166,59 @@ screen -r seriale2023-transfer
 
 ---
 
+## FINAL UPDATE: Transfer Successfully Started ✅
+
+### Issue Resolution
+- **Problem:** rsync hung at "sending incremental file list" with `--checksum` flag
+- **Root cause:** `--checksum` forces rsync to read and verify every file before starting transfer (very slow with 1073 folders)
+- **Solution:** Removed `--checksum` flag from rsync command
+- **Result:** Transfer now progressing smoothly at 90-112 MB/s
+
+### Current Transfer Status (as of 26 Dec 2025, 20:40 CET)
+- **Started:** Fri Dec 26, 20:15 CET
+- **Current data size:** 237GB
+- **Data transferred:** ~168GB (since fresh start)
+- **Progress:** ~1.4% of 12.3TB
+- **Speed:** Consistent 90-112 MB/s
+- **Status:** ✅ RUNNING - Transfer proceeding smoothly
+
+### Time Estimate
+- **Elapsed:** ~30 minutes
+- **Remaining:** ~35-40 hours
+- **Estimated completion:** Sunday Dec 28, 7-11 AM CET
+
+### Monitoring Commands
+```bash
+# Check progress without attaching to screen
+du -sh /seriale2023/
+
+# Reconnect to see detailed progress
+screen -r seriale2023-transfer
+```
+
+### Key Learnings
+1. **rsync `--checksum` flag:** Useful for verification but causes bottleneck during initial file list phase with large transfers
+2. **Screen detach:** Ctrl+A then D properly detaches without killing process
+3. **Safe terminal close:** Closing SSH doesn't affect background screen sessions
+4. **NFS mount timeout:** Default timeo=30 works fine for this transfer rate
+
+### Files Updated
+- `/home/sleszugreen/scripts/nas/transfer-seriale2023.sh` - Removed `--checksum` flag
+- `/mnt/lxc102scripts/transfer-seriale2023.sh` - Bind mount copy updated
+
+---
+
 ## User Notes
 
 - User not IT professional - explain technical concepts clearly
 - User prefers accuracy over speed - thorough debugging preferred
 - User catches calculation errors quickly - validate math carefully
 - NFS mount issues are concerning - need better error handling in script
+- User values confirmation and verification before making changes
 
 ---
 
-**Last Updated:** 26 Dec 2025, ~20:00 CET  
-**Next Session:** Ready to restart transfer
+**Last Updated:** 26 Dec 2025, 20:40 CET
+**Status:** ✅ TRANSFER IN PROGRESS - Monitoring recommended
+**Next Check:** December 27-28 to verify completion
 

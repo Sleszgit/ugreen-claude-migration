@@ -169,7 +169,6 @@ echo "==========================================================================
 echo ""
 
 rsync -avh \
-    --checksum \
     --partial \
     --progress \
     --exclude-from="$EXCLUDE_FILE" \
