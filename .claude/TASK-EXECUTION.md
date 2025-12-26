@@ -248,6 +248,99 @@ For each task:
 
 ---
 
+## Script Development Best Practices
+
+**Critical lesson (26 Dec 2025):** Script creation requires verification before coding, simplicity over cleverness, and incremental testing.
+
+### Verify Before Coding
+
+**❌ DON'T:**
+- Assume file paths or NFS exports from documentation
+- Guess at IP addresses or volume names
+- Use outdated or potentially incorrect information
+
+**✅ DO:**
+- Ask user to directly verify infrastructure: `ls`, `ssh`, `cat /etc/exports`
+- Confirm actual paths by checking the source system first
+- Get exact error messages and logs before proposing solutions
+
+### Script Design Principles
+
+**Simplicity > Cleverness:**
+- ❌ Avoid: Complex variable substitution, eval, dynamic command building
+- ✅ Use: Direct paths, simple commands, `--exclude-from` files instead of dynamic excludes
+- ❌ Avoid: Trying to be too clever with quoting/escaping
+- ✅ Use: Hardcoded paths with proper quoting when needed
+
+**Example:**
+```bash
+# ❌ BAD: Dynamic eval with complex quoting
+EXCLUDE_ARGS=""
+while read line; do EXCLUDE_ARGS="${EXCLUDE_ARGS} --exclude '$line'"; done < file.txt
+eval "rsync ${EXCLUDE_ARGS} source/ target/"
+
+# ✅ GOOD: Use exclude-from file
+rsync -av --exclude-from=exclude-file.txt source/ target/
+```
+
+### Incremental Testing
+
+**DON'T try to write complete scripts blindly:**
+1. Test the mount command first
+2. Test listing folders second
+3. Test exclude list generation third
+4. Run rsync last
+
+**DO break down complex operations:**
+- Each operation should be testable independently
+- Test manually first, then write script
+- Verify each step before combining
+
+### Script Placement (Critical)
+
+**For scripts accessible by both container AND Proxmox host:**
+- Create in: `/mnt/lxc102scripts/` (from container using Bash tool)
+- Accessible at: `/nvme2tb/lxc102scripts/` (on Proxmox host)
+- ❌ DON'T: Use `mcp__filesystem__write_file` (wrong context)
+- ✅ DO: Use Bash tool with `cat` or echo to write directly
+
+**Example:**
+```bash
+cat > /mnt/lxc102scripts/scriptname.sh << 'EOF'
+#!/bin/bash
+# script content here
+EOF
+chmod +x /mnt/lxc102scripts/scriptname.sh
+```
+
+### When Scripts Fail
+
+**Immediate actions:**
+1. Check the actual error message (not assumption)
+2. Break down the script to find which step failed
+3. Test that specific step manually
+4. Don't iterate - if approach fails twice, abandon and try different strategy
+
+**Common failure points:**
+- NFS mount paths (incorrect IP, wrong path, permissions)
+- Quoting issues with spaces in paths
+- Dynamic command construction (eval problems)
+- File not found due to filesystem context mismatch
+
+### User Feedback as Signal
+
+**If user says:**
+- "I'm tired of wasting time" → Strategy not working, pivot entirely
+- "Just do the script yourself" → Stop asking them to execute steps, take ownership
+- "This didn't work" → Don't ask for more info if you can verify directly
+
+**Response:**
+- Change approach immediately, don't iterate same path
+- Take responsibility for verification
+- Test before asking user to run
+
+---
+
 ## When to Use TodoWrite
 
 **Create todo list when:**
