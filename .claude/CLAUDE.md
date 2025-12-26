@@ -1057,6 +1057,21 @@ Approve? [yes/no]
   - Benefits: Fast I/O, compression, snapshots, auto-TRIM
 - **Data Storage:** 4x SATA bays (for bulk storage)
 
+**UGREEN Samba Share & Mount Points (Primary Data Storage):**
+- **Samba Share Name:** `ugreen20tb` (served by Samba 4.22.6)
+- **Proxmox Host Path:** `/storage/Media` (20TB ZFS RAID1 or single pool)
+- **Windows Access:** `\\192.168.40.60\ugreen20tb` OR `p:\` (mapped network drive)
+- **Container Access:** NOT directly accessible from LXC 102 (only via Samba or Proxmox host)
+- **Proxmox Firewall:** SMB ports (445, 139) allowed for Windows clients on 192.168.99.6
+
+**Current Folder Structure at `/storage/Media/`:**
+- `Filmy920/` - Movies from 920 NAS backup
+- `Movies918/` - Movies from 918 NAS backup
+- `20251209backupsfrom918/` - Backup folder (contains TV shows)
+  - `backup seriale 2022 od 2023 09 28/` - TV series from 2022-2023 period
+  - Windows path: `p:\20251209backupsfrom918\backup seriale 2022 od 2023 09 28\`
+- `series920part/` - **[TO BE CREATED]** TV series from 920 NAS backup (organized separately for deduplication)
+
 **Hardware Reference:**
 - Full hardware inventory: `/home/slesz/shared/projects/hardware/` (on homelab)
 - GitHub: https://github.com/Sleszgit/homelab-hardware
