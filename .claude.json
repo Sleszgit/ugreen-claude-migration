@@ -1,14 +1,14 @@
 {
-  "numStartups": 25,
+  "numStartups": 27,
   "theme": "light",
   "tipsHistory": {
     "new-user-warmup": 7,
-    "plan-mode-for-complex-tasks": 21,
+    "plan-mode-for-complex-tasks": 26,
     "terminal-setup": 21,
     "memory-command": 16,
     "theme-command": 21,
     "colorterm-truecolor": 1,
-    "status-line": 1,
+    "status-line": 26,
     "stickers-command": 21,
     "prompt-queue": 1,
     "enter-to-steer-in-relatime": 21,
@@ -27,10 +27,10 @@
     "mobile-app": 17,
     "custom-agents": 21,
     "permissions": 21,
-    "rename-conversation": 11,
-    "custom-commands": 11
+    "rename-conversation": 26,
+    "custom-commands": 26
   },
-  "promptQueueUseCount": 29,
+  "promptQueueUseCount": 30,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,
@@ -130,29 +130,29 @@
         "packageManager": null
       },
       "hasCompletedProjectOnboarding": true,
-      "lastCost": 1.0059533499999995,
-      "lastAPIDuration": 612588,
-      "lastAPIDurationWithoutRetries": 612500,
-      "lastToolDuration": 4572,
-      "lastDuration": 2979152,
-      "lastLinesAdded": 301,
-      "lastLinesRemoved": 5,
-      "lastTotalInputTokens": 33556,
-      "lastTotalOutputTokens": 41040,
-      "lastTotalCacheCreationInputTokens": 267157,
-      "lastTotalCacheReadInputTokens": 4332511,
+      "lastCost": 0.3888084999999999,
+      "lastAPIDuration": 300780,
+      "lastAPIDurationWithoutRetries": 300757,
+      "lastToolDuration": 1018,
+      "lastDuration": 1196608,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 11361,
+      "lastTotalOutputTokens": 26016,
+      "lastTotalCacheCreationInputTokens": 93544,
+      "lastTotalCacheReadInputTokens": 1304375,
       "lastTotalWebSearchRequests": 0,
       "lastModelUsage": {
         "claude-haiku-4-5-20251001": {
-          "inputTokens": 33556,
-          "outputTokens": 41040,
-          "cacheReadInputTokens": 4332511,
-          "cacheCreationInputTokens": 267157,
+          "inputTokens": 11361,
+          "outputTokens": 26016,
+          "cacheReadInputTokens": 1304375,
+          "cacheCreationInputTokens": 93544,
           "webSearchRequests": 0,
-          "costUSD": 1.0059533499999995
+          "costUSD": 0.3888084999999999
         }
       },
-      "lastSessionId": "aabf81de-508a-422b-ac3c-cd32ebfe7134",
+      "lastSessionId": "d3bb0148-aa0b-436b-b3be-b4562fa5e486",
       "exampleFilesGeneratedAt": 1766721775622
     }
   },
@@ -160,7 +160,7 @@
     "20e1bfdc-0610-4a84-aec8-470c2a13f487": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1766718788867
+      "timestamp": 1766741992689
     }
   },
   "feedbackSurveyState": {
