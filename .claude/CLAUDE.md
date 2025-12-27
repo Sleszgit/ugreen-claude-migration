@@ -36,16 +36,26 @@
 
 ---
 
-## ⚠️ SSH & API Access (Critical - 25 Dec 2025)
+## ⚠️ SSH & API Access (Status - 27 Dec 2025)
 
+**UGREEN Infrastructure:**
 - ❌ SSH container → Proxmox host: **NOT configured**
-- ❌ SSH homelab → UGREEN: **NOT configured**
 - ✅ **USE:** Proxmox API with tokens instead
   - UGREEN cluster: `~/.proxmox-api-token`
   - UGREEN VM 100: `~/.proxmox-vm100-token`
-- 📌 File transfers: Use heredoc/cat method (not SCP)
 
-**API Setup Status:** ✅ Properly configured and tested (25 Dec 2025)
+**Homelab Access (Session 39 in progress):**
+- ⏳ SSH homelab → UGREEN: **IN PROGRESS**
+  - User created: `ugreen-homelab-ssh` on homelab
+  - SSH key installed: UGREEN public key in authorized_keys
+  - **BLOCKED:** Firewall configuration issue (malformed `/etc/pve/firewall/cluster.fw`)
+  - See `docs/claude-sessions/SESSION-39-HOMELAB-SSH-SETUP.md` for details
+
+**Current Workaround:**
+- Use Windows Desktop (192.168.99.6) to access homelab SSH
+- Or: Proxmox API with homelab token (when properly configured)
+
+**API Setup Status:** ✅ Properly configured for UGREEN (25 Dec 2025)
 → See `PROXMOX-API-SETUP.md` for full details
 
 ---
