@@ -63,11 +63,8 @@
 
 **Usage:**
 ```bash
-# Create in container:
-cat > /mnt/lxc102scripts/my-script.sh << 'EOF'
-#!/bin/bash
-echo "test"
-EOF
+# Create in container (using printf - avoids heredoc issues):
+printf '#!/bin/bash\necho "test"\n' > /mnt/lxc102scripts/my-script.sh
 chmod +x /mnt/lxc102scripts/my-script.sh
 
 # Run from Proxmox host:
@@ -75,6 +72,9 @@ sudo bash /nvme2tb/lxc102scripts/my-script.sh
 
 # Run from container:
 bash /mnt/lxc102scripts/my-script.sh
+
+# ℹ️ NOTE: Use printf or echo commands instead of heredoc (<<EOF)
+# Heredoc breaks in nested shell contexts (e.g., sudo bash -c)
 ```
 
 ---

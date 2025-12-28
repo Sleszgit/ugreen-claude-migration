@@ -304,13 +304,14 @@ rsync -av --exclude-from=exclude-file.txt source/ target/
 - ❌ DON'T: Use `mcp__filesystem__write_file` (wrong context)
 - ✅ DO: Use Bash tool with `cat` or echo to write directly
 
-**Example:**
+**Example (using printf instead of heredoc):**
 ```bash
-cat > /mnt/lxc102scripts/scriptname.sh << 'EOF'
-#!/bin/bash
-# script content here
-EOF
+# Use printf to avoid heredoc parsing issues in nested shell contexts:
+printf '#!/bin/bash\n# script content here\n' > /mnt/lxc102scripts/scriptname.sh
 chmod +x /mnt/lxc102scripts/scriptname.sh
+
+# ℹ️ Note: Heredoc (<<EOF) breaks in sudo bash -c contexts
+# Use printf, echo, or Write tool instead
 ```
 
 ### When Scripts Fail

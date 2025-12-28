@@ -181,6 +181,40 @@ chmod 600 ~/.proxmox-vm100-token
 
 ## Troubleshooting API Access
 
+### ⚠️ CRITICAL: Heredoc Syntax Breaks in Nested Shells
+
+**Problem:**
+```bash
+# ❌ FAILS with "here-document delimited by end-of-file" error
+sudo bash -c 'cat > /file << "EOF"
+content
+EOF'
+```
+
+**Why:** Shell parser gets confused by nested quoting layers when heredoc delimiters are nested inside `sudo bash -c`
+
+**SOLUTION - Use printf or echo instead:**
+```bash
+# ✅ WORKS - Avoids heredoc entirely
+sudo bash -c '
+echo "line1" > /file
+echo "line2" >> /file
+echo "line3" >> /file
+'
+
+# OR use printf:
+sudo bash -c 'printf "line1\nline2\nline3\n" > /file'
+```
+
+**When to use each:**
+- **printf:** Single multi-line write, no special characters
+- **echo:** Multiple lines, easier to read
+- **heredoc:** Only in direct shell (not nested in sudo bash -c)
+
+**See also:** `PATHS-AND-CONFIG.md` and `TASK-EXECUTION.md` for more examples
+
+---
+
 ### Issue: Connection Refused
 
 **Symptoms:** `Connection refused` when running curl commands
