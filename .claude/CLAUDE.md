@@ -36,7 +36,7 @@
 
 ---
 
-## ⚠️ SSH & API Access (Status - 27 Dec 2025)
+## ⚠️ SSH & API Access (Status - 28 Dec 2025)
 
 **UGREEN Infrastructure:**
 - ❌ SSH container → Proxmox host: **NOT configured**
@@ -44,16 +44,23 @@
   - UGREEN cluster: `~/.proxmox-api-token`
   - UGREEN VM 100: `~/.proxmox-vm100-token`
 
-**Homelab Access (Session 39 in progress):**
-- ⏳ SSH homelab → UGREEN: **IN PROGRESS**
-  - User created: `ugreen-homelab-ssh` on homelab
-  - SSH key installed: UGREEN public key in authorized_keys
-  - **BLOCKED:** Firewall configuration issue (malformed `/etc/pve/firewall/cluster.fw`)
-  - See `docs/claude-sessions/SESSION-39-HOMELAB-SSH-SETUP.md` for details
+**Homelab Access (Session 45 - COMPLETED):**
+- ✅ SSH homelab → UGREEN: **OPERATIONAL**
+  - User: `ugreen-homelab-ssh` on homelab (192.168.40.40)
+  - SSH key: UGREEN public key in authorized_keys
+  - Firewall: Fixed (cluster.fw corrected)
+  - Passwordless sudo: ✅ Configured for all Proxmox commands
+  - Tested commands: pveversion, qm list, pct list, zpool list
+  - See `docs/claude-sessions/SESSION-45-HOMELAB-SSH-COMPLETION.md` for details
 
-**Current Workaround:**
-- Use Windows Desktop (192.168.99.6) to access homelab SSH
-- Or: Proxmox API with homelab token (when properly configured)
+**Available Commands from UGREEN via SSH:**
+- `sudo qm list/status/create/delete` - VM management
+- `sudo pct list/status/create/delete` - Container management
+- `sudo pvesh get/set` - Proxmox API CLI
+- `sudo pveum user/acl` - User/permission management
+- `sudo zpool/zfs` - ZFS pool management
+- `sudo systemctl` - Service management
+- `sudo pveversion` - Version info
 
 **API Setup Status:** ✅ Properly configured for UGREEN (25 Dec 2025)
 → See `PROXMOX-API-SETUP.md` for full details
