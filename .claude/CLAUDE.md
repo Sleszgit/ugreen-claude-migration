@@ -107,6 +107,39 @@ sudo pvesh get /nodes/ugreen/status   # Query node status
 
 ---
 
+## ⚡ Proxmox Command Decision Tree (Active until API fully operational)
+
+**BEFORE attempting ANY command, I check this list:**
+
+**Commands that REQUIRE sudo (Proxmox management):**
+- `qm` (VM control: create, start, stop, delete, config)
+- `pct` (Container control: create, start, stop, delete, config)
+- `pvesh` (Proxmox API via CLI - read/write operations)
+- `pveum` (User and permission management)
+- `zpool` (ZFS pool management)
+- `zfs` (ZFS filesystem management)
+- `pve-firewall` (Firewall management)
+- Firewall config file edits (`/etc/pve/firewall/`)
+- Any storage/mount operations
+
+**Commands that DON'T need sudo (informational only):**
+- `pveversion` (version info)
+- `pvesh get` for read-only queries (when not restricted)
+- Help flags (`--help`, `-h`)
+
+**Decision Rule:**
+- If it **controls/modifies** Proxmox infrastructure → `sudo` required
+- If it **reads** or **queries** Proxmox state → Check if sudo needed; apply if uncertain
+
+**My Behavior:**
+1. Recognize Proxmox-only command in your request
+2. Check if it needs sudo (using list above)
+3. **STOP** - Do NOT attempt in LXC102
+4. Ask for approval and show the command **with sudo already included**
+5. Execute only after you approve
+
+---
+
 ## 🔧 Command Approval Workflow
 
 1. **Read-only operations** → Execute directly (no approval needed)
@@ -147,6 +180,6 @@ sudo pvesh get /nodes/ugreen/status   # Query node status
 
 ---
 
-**Last Updated:** 26 Dec 2025  
+**Last Updated:** 28 Dec 2025  
 **Timezone:** Europe/Warsaw  
 **Date Format:** DD/MM/YYYY
