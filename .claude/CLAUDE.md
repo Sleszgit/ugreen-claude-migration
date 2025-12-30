@@ -158,6 +158,42 @@ sudo pvesh get /nodes/ugreen/status   # Query node status
 
 ---
 
+## ⚠️ System Reboot Safety Protocol
+
+**CRITICAL RULE: Before ANY planned system reboot, always:**
+
+1. **Save current session** - Document what was done in this session
+2. **Commit to GitHub** - Push all changes and session notes to repository
+3. **THEN execute reboot** - Only after steps 1-2 are complete
+
+**Why this matters:**
+- If reboot fails or causes unexpected issues, we have a documented record
+- GitHub preserves the exact state before reboot for recovery
+- Session history shows the complete sequence of changes
+- Enables rapid diagnosis and rollback if needed
+
+**This applies to:**
+- ✅ Any `sudo reboot` or `sudo systemctl reboot` commands
+- ✅ Any infrastructure changes that will be tested via reboot
+- ✅ Any system updates or major configuration changes
+- ✅ Testing procedures that require reboot verification
+
+**The procedure (every time):**
+```bash
+# 1. Save session to docs/claude-sessions/
+# 2. Commit to git:
+git add .
+git commit -m "Session X: [description] - Pre-reboot checkpoint"
+git push
+
+# 3. THEN execute reboot:
+sudo reboot
+```
+
+**Updated:** 30 Dec 2025
+
+---
+
 ## 📊 Key Files & Directories
 
 **Confirmed paths in LXC 102:**
