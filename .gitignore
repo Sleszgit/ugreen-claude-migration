@@ -9,6 +9,9 @@
 *_dsa
 *_ecdsa
 *_ed25519
+*.gpg
+*token-backup*.tar.gz
+.gnupg/
 
 # Claude Code internal files
 .claude/.credentials.json
