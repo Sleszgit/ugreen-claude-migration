@@ -2,12 +2,12 @@
 **Date:** 31 Dec 2025
 **Duration:** ~45 minutes
 **Location:** LXC 102 (ugreen-ai-terminal)
-**Status:** ✅ COMPLETE - Ready for UFW firewall setup
+**Status:** ✅ COMPLETE - All HIGH PRIORITY tasks finished
 
 ---
 
 ## Objective
-Continue LXC 102 security hardening from Session 69. Fix file permissions and harden SSH configuration.
+Continue LXC 102 security hardening from Session 69. Fix file permissions, harden SSH configuration, and install firewall protection.
 
 ---
 
@@ -83,6 +83,44 @@ sudo sshd -T
 
 ---
 
+### 3. ✅ UFW Firewall Installation & Configuration (15 mins)
+**Changes applied:**
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| UFW Status | Enabled | Firewall active on boot |
+| Default Incoming | Deny | Block all unsolicited inbound |
+| Default Outgoing | Allow | Allow all outbound connections |
+| SSH Port 22/tcp | Allow | Explicit exception for SSH |
+
+**Verification:**
+```bash
+# UFW enabled in config
+ENABLED=yes  ✅
+
+# SSH listening on port 22
+LISTEN 0.0.0.0:22     ✅
+LISTEN [::]:22        ✅
+
+# SSH accessibility tested
+✅ Current SSH connection remains active
+✅ New SSH connection from MobaXterm successful
+✅ Port 22 reachable locally and remotely
+```
+
+**Security Impact:**
+- Default deny-by-default firewall policy active
+- Only explicitly allowed traffic permitted
+- SSH preserved for remote administration
+- All outbound allowed (updates, API calls, etc.)
+
+**User Impact:**
+- ✅ Zero impact - remote SSH works perfectly
+- ✅ Verified with MobaXterm new connection
+- ✅ No disruption to normal operations
+
+---
+
 ## Architecture Notes
 
 ### Multi-AI Agent Design
@@ -114,27 +152,57 @@ Confirmed remote SSH access from desktop to LXC 102 will continue working:
 
 ---
 
-## Remaining HIGH PRIORITY Tasks (15 mins)
+## Remaining Tasks - MEDIUM & LOW Priority
 
-**Next Session:**
-1. Install and enable UFW firewall
-   - Default deny incoming, allow outgoing
-   - Allow SSH port 22 (verified safe for remote access)
-   - All verification done; ready to proceed
+### MEDIUM PRIORITY (1-2 hours each)
+
+**1. Secrets Management (pass) - RECOMMENDED NEXT**
+- Encrypt 6 API tokens currently stored as plain files
+- Prevent exposure if shell access is compromised
+- Use `pass` tool (GPG-based, simple for single user)
+- Effort: 1-2 hours
+- Risk reduction: HIGH (tokens are critical infrastructure)
+
+**2. API Token Rotation Policy**
+- Establish schedule for rotating tokens (every 3-6 months)
+- Limits window of exposure if token is stolen
+- Effort: 30 mins setup, 15 mins per rotation
+- Risk reduction: MEDIUM
+
+**3. AppArmor Profiles for Critical Services**
+- Sandbox Claude Code, Gemini, SSH daemon
+- Prevents compromised process from accessing full filesystem
+- Effort: 45 mins
+- Risk reduction: MEDIUM (LXC already isolated from Proxmox)
+
+### LOW PRIORITY (Ongoing)
+
+**4. Quarterly Security Audits**
+- Every 3 months (Jan 1, Apr 1, Jul 1, Oct 1)
+- Re-run Session 69 comprehensive audit
+- Check for new vulnerabilities, permission drift, etc.
+- Effort: 1-2 hours per audit
+- Risk reduction: LOW-MEDIUM (prevents gradual degradation)
+
+### Recommended Next Session Order
+1. Secrets management (pass) - Encrypt API tokens
+2. Token rotation policy - Schedule token changes
+3. AppArmor - Defense in depth
+4. Audits - Schedule quarterly checks
 
 ---
 
 ## Commands Executed
 
 ```bash
-# File permissions
+# File permissions (6 changes)
 chmod 600 ~/.bashrc
 chmod 755 ~/.gemini
 find ~/scripts -type d -exec chmod 755 {} \;
 find ~/scripts -type f -name "*.sh" -exec chmod 755 {} \;
 find ~/scripts -type f ! -name "*.sh" -exec chmod 644 {} \;
 
-# SSH hardening (single command)
+# SSH hardening (single command with 6 settings)
 sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup && \
 sudo sed -i 's/^X11Forwarding yes/X11Forwarding no/; \
 s/^#MaxAuthTries 6/MaxAuthTries 3/; \
@@ -145,9 +213,18 @@ s/^#ClientAliveCountMax 3/ClientAliveCountMax 2/' /etc/ssh/sshd_config && \
 sudo sshd -T && \
 sudo systemctl restart ssh
 
+# UFW firewall setup (single command)
+sudo ufw default deny incoming && \
+sudo ufw default allow outgoing && \
+sudo ufw allow 22/tcp && \
+sudo ufw enable
+
 # Verification
 grep -E "^X11Forwarding|^MaxAuthTries|^MaxSessions|^Compression|^ClientAlive" /etc/ssh/sshd_config
 sudo sshd -T
+cat /etc/ufw/ufw.conf | grep ENABLED
+netstat -tlnp | grep :22
+timeout 2 bash -c "echo >/dev/tcp/localhost/22"
 ```
 
 ---
@@ -202,10 +279,11 @@ sudo sshd -T
 
 ---
 
-**Session status:** ✅ COMPLETE
-**All changes verified:** Yes
-**Ready for next task:** Yes
-**SSH remote access:** ✅ Confirmed safe after UFW setup
+**Session status:** ✅ COMPLETE - All HIGH PRIORITY tasks finished
+**All changes verified:** Yes ✅
+**SSH remote access:** ✅ Confirmed working with MobaXterm
+**Firewall active:** ✅ UFW enabled and verified
+**Ready for next session:** Yes - Secrets management (pass) recommended
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
