@@ -1,6 +1,8 @@
 # Secrets and tokens
 .github-token
 .proxmox-*-token
+.gemini-api-key
+.gemini-vm100-token
 *.key
 *.pem
 *_rsa
@@ -39,6 +41,8 @@
 .config/
 .npm/
 .ssh/
+.local/
+.gemini/
 
 # System config files (keep tracked versions separate)
 .bashrc
@@ -49,5 +53,16 @@
 logs/
 *.log
 
-# Node modules
+# Node modules and related
 node_modules/
+.mcp.json
+.claude.json.backup
+
+# Generated/temporary files
+checkpoint-verify.sh
+create-docker-vm-cloudinit.sh
+deploy-zfs-auto-import.sh
+diagnose-homelab-setup.sh
+fix-zfs-auto-import.sh
+phase3-seriale2023-transfer.sh
+retransfer-incomplete-series920-FIXED.sh

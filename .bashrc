@@ -121,3 +121,7 @@ fi
   if [ -f "$HOME/scripts/auto-update/.auto-update.sh" ]; then
       "$HOME/scripts/auto-update/.auto-update.sh" &
   fi
+
+# Gemini CLI Configuration
+export PATH="$HOME/.local/bin:$PATH"
+[ -f ~/.gemini-api-key ] && source ~/.gemini-api-key
