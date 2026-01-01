@@ -10,38 +10,58 @@
 
 | Project | Status | Purpose | Owner | Last Update |
 |---------|--------|---------|-------|-------------|
-| homelab-automation | [To fill] | Infrastructure automation | Claude | 2026-01-01 |
-| infrastructure-tools | [To fill] | Proxmox/LXC utilities | Claude | 2026-01-01 |
-| data-transfer | [To fill] | NAS/backup transfer | Claude | 2026-01-01 |
-| security-hardening | [To fill] | Security hardening | Claude | 2026-01-01 |
+| lxc102-backup-strategy | 🔄 Planning | Backup & recovery for LXC102 | Claude | 2026-01-01 |
+| homelab-automation | ⏳ Template | Infrastructure automation | Claude | 2026-01-01 |
+| infrastructure-tools | ⏳ Template | Proxmox/LXC utilities | Claude | 2026-01-01 |
+| data-transfer | ⏳ Template | NAS/backup transfer | Claude | 2026-01-01 |
+| security-hardening | ⏳ Template | Security hardening | Claude | 2026-01-01 |
 
 ---
 
 ## 🔍 Project Details
 
+### lxc102-backup-strategy/ ⭐ ACTIVE
+- **Full Path:** `~/ai-projects/lxc102-backup-strategy/`
+- **Status:** 🔄 Planning Phase
+- **Description:** Design and implement backup/recovery strategy for LXC102 (ugreen-ai-terminal)
+- **Key Decisions:**
+  - Backup method: vzdump vs snapshots vs rsync vs tar+SSH
+  - Storage location: Homelab isolation vs UGREEN NAS redundancy
+  - Frequency: On-demand, daily, or after changes
+  - Recovery testing procedure
+- **Next Step:** Consult Gemini on backup approaches
+- **Key Files:**
+  - `README.md` - Full objective & requirements
+  - `.ai_context/current_mission.tmp` - Problem statement
+  - `.ai_context/decision_log.md` - Tracking Gemini consultations
+
 ### homelab-automation/
 - **Full Path:** `~/ai-projects/homelab-automation/`
+- **Status:** ⏳ Template (ready to start)
 - **Description:** Infrastructure automation scripts
 - **Key Files:** See `.ai_context/decision_log.md`
-- **Next Review:** [Date to be determined]
+- **Next Review:** When starting this project
 
 ### infrastructure-tools/
 - **Full Path:** `~/ai-projects/infrastructure-tools/`
+- **Status:** ⏳ Template (ready to start)
 - **Description:** Proxmox and LXC management utilities
 - **Key Files:** See `.ai_context/decision_log.md`
-- **Next Review:** [Date to be determined]
+- **Next Review:** When starting this project
 
 ### data-transfer/
 - **Full Path:** `~/ai-projects/data-transfer/`
+- **Status:** ⏳ Template (ready to start)
 - **Description:** NAS/backup data transfer automation
 - **Key Files:** See `.ai_context/decision_log.md`
-- **Next Review:** [Date to be determined]
+- **Next Review:** When starting this project
 
 ### security-hardening/
 - **Full Path:** `~/ai-projects/security-hardening/`
+- **Status:** ⏳ Template (ready to start)
 - **Description:** Security hardening and protection scripts
 - **Key Files:** See `.ai_context/decision_log.md`
-- **Next Review:** [Date to be determined]
+- **Next Review:** When starting this project
 
 ---
 
