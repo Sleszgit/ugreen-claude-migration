@@ -1,10 +1,16 @@
 # AI Projects: Claude + Gemini Collaboration Zone
 
-**Purpose:** Active projects where Claude (Strategic Lead) and Gemini (Tactical Expert) collaborate
+**Purpose:** Default location for ALL projects - Claude (Strategic Lead) + Gemini (Tactical Expert) collaborate
+
+**🎯 MODEL:** Collaborative-first (default for all new projects)
+- All new projects start here unless explicitly marked "SOLO"
+- Gemini provides expert review, security audits, and second opinions
+- Claude leads strategy and makes final decisions
+- Solo projects are the exception, not the rule
 
 ---
 
-## 📂 Active Projects
+## 📂 Active Projects (Default Starting Location)
 
 ### 1. **homelab-automation/**
 - **Status:** [To be filled]
@@ -70,15 +76,28 @@ project-name/
 
 ---
 
-## 🚀 Starting a New Collaborative Project
+## 🚀 Starting a New Collaborative Project (DEFAULT APPROACH)
 
 ### Step 1: Create Project Folder
 ```bash
+# ALL projects start here by default
 mkdir ~/ai-projects/my-project
 cd ~/ai-projects/my-project
 ```
 
-### Step 2: Set Up .ai_context
+### Step 2: Decide Project Type
+**Default is COLLABORATIVE. Only mark SOLO if you explicitly choose it.**
+
+Create `docs/README.md` with:
+```markdown
+# [Project Name]
+
+**Type:** Collaborative  ← DEFAULT
+OR
+**Type:** Claude-Solo (ONLY if explicitly chosen at start)
+```
+
+### Step 3: Set Up .ai_context (Always, unless marked SOLO)
 ```bash
 mkdir .ai_context
 # Copy templates from ~/.ai_context/
@@ -87,30 +106,31 @@ touch .ai_context/current_mission.tmp
 touch .ai_context/decision_log.md
 ```
 
-### Step 3: Create Initial Documentation
+### Step 4: Create Project Structure
 ```bash
-# Create project README with template (see below)
+mkdir docs scripts tests
 touch docs/README.md
 touch docs/ARCHITECTURE.md
 touch docs/SESSIONS.md
 ```
 
-### Step 4: Begin Development
+### Step 5: Begin Development (Collaborative Model)
 - Claude leads strategic decisions
-- Consult Gemini when: complexity >50 lines, code fails 2+ times, security concerns exist
-- Log all Gemini consultations in `.ai_context/decision_log.md`
+- Gemini consulted automatically for: >50 lines, failed 2+ times, security, multiple approaches
+- All decisions logged in `.ai_context/decision_log.md`
+- Collaborative by default = faster feedback loops
 
 ---
 
-## 📝 Project README Template
+## 📝 Project README Template (Collaborative Default)
 
 ```markdown
 # [Project Name]
 
 **Created:** YYYY-MM-DD
-**Type:** Collaborative
+**Type:** Collaborative  ← Default (all projects start here)
 **Status:** [In Progress / Blocked / Complete]
-**Owner:** Claude
+**Owner:** Claude (Strategic Lead)
 
 ## Objective
 Clear description of what this project achieves.
@@ -125,6 +145,12 @@ Clear description of what this project achieves.
 - Component 1: [Description]
 - Component 2: [Description]
 
+## Collaboration Model
+- **Approach:** Collaborative (Claude + Gemini)
+- **Gemini Role:** Expert review, security audits, edge case analysis
+- **Decision Owner:** Claude
+- **Tracking:** See `.ai_context/decision_log.md`
+
 ## Gemini Consultations
 - [Date]: Issue → Recommendation → Status
 - See `.ai_context/decision_log.md` for full history
@@ -135,6 +161,13 @@ Clear description of what this project achieves.
 
 ## Known Issues
 - Issue 1: [Description & workaround]
+```
+
+**OR for solo projects (explicit choice only):**
+
+```markdown
+**Type:** Claude-Solo  ← ONLY if explicitly chosen at start
+**Collaboration:** None (this is the exception, not the rule)
 ```
 
 ---

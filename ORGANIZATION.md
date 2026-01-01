@@ -70,8 +70,9 @@
 
 ## 📋 Folder Rules
 
-### `ai-projects/` - Collaboration Zone
-**When:** Claude and Gemini work together on projects
+### `ai-projects/` - DEFAULT: Collaborative Projects
+**Default Model:** All projects start here unless explicitly marked as solo
+**Collaboration:** Claude (Strategic Lead) + Gemini (Expert Consultant)
 **Structure:** Each project must have:
 ```
 project-name/
@@ -85,19 +86,24 @@ project-name/
 └── README.md                     ← Project overview & status
 ```
 
-**Examples of collaborative projects:**
+**Types of collaborative projects (all start here):**
 - Infrastructure automation (planning + security review)
 - Data transfer tools (strategy + edge case analysis)
 - Security hardening (architecture + vulnerability assessment)
 - Monitoring systems (design + performance optimization)
+- Any project >50 lines, security-sensitive, or with multiple approaches
+- Any project that will be tested/refined (default for most work)
 
-### `claude-solo/` - Claude's Domain
-**When:** Claude owns architecture, execution, and decisions
+### `claude-solo/` - Opt-In Solo Projects
+**When:** Project explicitly marked as solo-only at start
+**Criteria:** Must be marked "SOLO" in README at project creation
 **Used for:**
-- Proxmox host administration tools
-- Container lifecycle management
-- User-facing utilities
-- Projects where Gemini involvement adds little value
+- Simple CLI wrappers (qm/pct commands with no logic)
+- One-time administrative utilities (no future maintenance)
+- Straightforward management scripts (no complexity)
+- Projects where Gemini review explicitly adds NO value (rare)
+
+**Important:** Projects are collaborative by default. Solo is an exception that must be explicitly chosen.
 
 **Example:**
 ```

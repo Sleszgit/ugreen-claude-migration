@@ -1,19 +1,32 @@
-# Claude Solo: Claude-Only Projects
+# Claude Solo: Opt-In Solo Projects
 
-**Purpose:** Projects where Claude leads design, implementation, and decisions without regular Gemini consultation
+**Purpose:** Projects explicitly marked as solo-only where Claude leads design, implementation, and decisions without Gemini consultation
+
+**⚠️ IMPORTANT:** This is NOT the default! Projects are collaborative by default.
+Only create solo projects if you explicitly mark them as such at creation time.
 
 ---
 
 ## 📂 Projects in This Category
 
-### When to Use This Folder
-- ✅ Straightforward utilities (no complex logic)
-- ✅ Management scripts where strategy is clear
-- ✅ Infrastructure tools with simple requirements
-- ✅ Projects where Gemini review adds minimal value
-- ❌ NOT for complex code (>50 lines with decision logic)
-- ❌ NOT for security-sensitive operations
-- ❌ NOT for code that failed 2+ times
+### When to Create a Solo Project
+You must EXPLICITLY choose solo when creating the project. Solo projects are rare exceptions.
+
+**✅ Only use this folder if:**
+- Project is extremely simple (no decision logic, <10 lines of wrapping code)
+- One-time administrative utility (will never be revisited or refined)
+- Trivial CLI wrapper (no custom logic)
+- Marked "SOLO" in README at project creation
+- Gemini review would literally add zero value
+
+**❌ DO NOT use solo for:**
+- Complex code (>50 lines)
+- Security-sensitive operations (always get second opinion)
+- Projects that failed 2+ times (need expert analysis)
+- Anything that might be refined or expanded
+- Any project without explicit "SOLO" marking at creation
+
+**Default:** If unsure, put in ai-projects/ (collaborative) instead!
 
 ---
 
@@ -74,12 +87,18 @@ Any constraints or edge cases.
 
 ---
 
-## 🎯 Decision Rule
+## 🎯 Decision Rule (Opt-In Solo Model)
 
-**Ask yourself:** "Is Gemini likely to find issues or suggest significant improvements?"
+**Default:** Start ALL projects in `ai-projects/` (collaborative)
 
-- **Yes?** → Move to `ai-projects/` (use collaboration model)
-- **No?** → Keep in `claude-solo/` (Claude handles it)
+**Only move to `claude-solo/` if you explicitly answer:**
+
+**Question:** "Will I NEVER benefit from Gemini's analysis on this project?"
+
+- **ANY doubt?** → Keep in `ai-projects/` (default, collaborative)
+- **100% certain solo?** → Move to `claude-solo/` and mark "SOLO" in README
+
+**Remember:** Solo is opt-in, not default. When in doubt, collaborate!
 
 ---
 
