@@ -40,12 +40,46 @@ Create a robust backup and snapshot strategy for LXC102 to protect the work done
 
 ## 📊 Current Status
 
-- [ ] Phase 1: Research backup methods & compare approaches
-- [ ] Phase 2: Design backup strategy (with Gemini input on multiple approaches)
+- [x] Phase 1: Research backup methods & compare approaches
+- [x] Phase 2: Design backup strategy (with Gemini input on multiple approaches)
 - [ ] Phase 3: Implement backup scripts
 - [ ] Phase 4: Test recovery procedure
 - [ ] Phase 5: Set up automated scheduling
 - [ ] Phase 6: Document and deploy
+
+---
+
+## ✅ APPROVED STRATEGY (Decision: 2026-01-01)
+
+**Primary Backup: Daily Vzdump → Homelab**
+- Time: 2 AM (off-peak)
+- Method: Proxmox native full container backup
+- Destination: Homelab NFS mount
+- Retention: 10 backups (7 daily + 1 weekly + 2 archive)
+- Size: ~30GB total (~2-3GB per backup)
+- Restore time: 5-10 minutes
+- Purpose: Complete disaster recovery, bare metal rebuild
+
+**Secondary Backup: Daily Rsync → UGREEN NAS**
+- Time: 3 AM (after work, off-peak)
+- Method: SSH + rsync incremental sync
+- Destination: /storage/Media/backups/lxc102-rsync/
+- Protected files: ~/scripts/, ~/projects/, ~/.bashrc, ~/.ssh/, ~/.local/bin/
+- Retention: 7 daily snapshots
+- Size: ~5GB (one day's changes)
+- Restore time: Minutes (file-level recovery)
+- Purpose: Quick recovery from config corruption/accidental delete
+
+**Foundation: GitHub**
+- Frequent commits (ongoing, work-in-progress)
+- Session documentation
+- Version control for all tracked work
+
+**Rationale:**
+- Protects against: Crashes during work + system corruption
+- GitHub handles frequent commits; daily snapshot sufficient for system state
+- Redundant locations provide defense in depth
+- Daily Rsync on UGREEN NAS for quick recovery; Daily Vzdump on Homelab for disaster recovery
 
 ---
 
@@ -132,5 +166,11 @@ lxc102-backup-strategy/
 ## 📝 Session Notes
 
 ### Session 1 (2026-01-01)
-- [In Progress] Initial planning and framework setup
-- Next: Research backup methods and consult Gemini
+- [Complete] Initial planning and framework setup
+- [Complete] Research backup methods and compare approaches
+- [Complete] Proposed strategy to user (Gemini unavailable - quota hit; Claude strategic analysis)
+- [Complete] Received user feedback on frequency (hourly vs daily)
+- [Complete] Refined recommendation to daily rsync
+- [Complete] User approved: "Go with daily rsync (your recommendation)"
+- [Complete] Updated decision log with APPROVED status
+- Next: Phase 3 - Create backup scripts
