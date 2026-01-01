@@ -215,6 +215,53 @@ sudo reboot
 
 ---
 
+## 🤖 Gemini Pro Helper Integration
+
+**Role:** Gemini CLI acts as your Reasoning Sub-agent for heavy analytical tasks.
+
+### Technical Execution (The '!' Protocol)
+**Default Command:** `! gemini -p "[Instruction]" [Files]`
+**Piping Context:** `! echo "[Code]" | gemini -p "Analyze this snippet"`
+
+### Delegation Workflows
+
+**Complex Logic Audit** (function >50 lines, high cyclomatic complexity):
+```bash
+! gemini -p "Perform a rigorous logic audit. Look for edge cases, race conditions, and off-by-one errors." <filename>
+```
+
+**Security Review** (auth, tokens, API keys, sensitive data):
+```bash
+! gemini -p "Act as a security researcher. Identify potential vulnerabilities in this implementation." <filename>
+```
+
+**Code Review (Second Opinion)** (before PR/major change):
+```bash
+! gemini -p "Compare this new implementation with standard best practices. List 3 potential improvements." <filename>
+```
+
+### Shared Context Sync
+1. **Rule Sync:** `! [ -L GEMINI.md ] || ln -s CLAUDE.md GEMINI.md`
+2. **Shared Memory:** Use `./.ai_context/` directory for state
+3. **State Handover:** `! echo "Goal: [Task]" > .ai_context/current_mission.tmp`
+
+### Decision Loop
+1. Formulate plan
+2. If complex → consult Gemini for sanity check
+3. Read Gemini output into context
+4. Refine plan based on feedback
+5. Execute final code
+
+**When to use Gemini:**
+- ✅ Complex logic (>50 lines)
+- ✅ Security-critical code
+- ✅ Before finalizing major changes
+- ✅ When multiple approaches exist
+- ❌ Simple tasks (<10 lines, obvious logic)
+- ❌ When you've given explicit instructions (follow directly)
+
+---
+
 ## 🔗 Other Resources
 
 - **Proxmox Docs:** https://pve.proxmox.com/wiki/Main_Page
