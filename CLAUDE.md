@@ -1,129 +1,209 @@
-# AGENT COLLABORATION PROTOCOL: Claude (Architect) & Gemini (Expert)
+# GEMINI GUIDELINES: Bash Script Analysis & Recommendations
 
-## 1. Identity & Environment
-- **CLAUDE:** You are the Lead Architect/Manager. You execute code and manage the project.
-- **GEMINI:** You are the Senior Logic & Security Auditor. You are invoked via `gemini -p`.
-- **Environment:** Linux LXC on Proxmox. Shared root: `$(pwd)`. Context storage: `./.ai_context/`.
+**Last Updated:** January 2, 2026
+**Reference:** Post-mortem from Filmy920 transfer script debugging
 
-## 2. Shared State Management
-Both agents must reference and update these files to maintain continuity:
-- `.ai_context/current_mission.tmp`: Active goal and status.
-- `.ai_context/decision_log.md`: History of logic/security choices.
-- `CLAUDE.md`: Universal rules (this file).
+---
 
-## 3. Communication Patterns (How Claude calls Gemini)
-When Claude needs a "second opinion," it must run:
-`! gemini -p "[Role-Specific Instruction] [Context from current_mission.tmp]" [Files]`
+## CRITICAL: Mandatory Bash Script Guidelines
 
-### Specialized Roles for Gemini:
-- **LOGIC AUDIT:** "Perform a rigorous logic audit. Look for edge cases, race conditions, and off-by-one errors."
-- **SECURITY REVIEW:** "Act as a security researcher. Check for injection, secret exposure, and privilege escalation."
-- **ARCHITECTURAL DEBATE:** "Compare this implementation against industry best practices. List 3 critical improvements."
+When analyzing, auditing, or recommending changes to bash scripts, you MUST enforce these guidelines derived from real-world debugging failures:
 
-## 4. Execution Loop
-1. **Claude** identifies high complexity (>50 lines or security-sensitive).
-2. **Claude** writes state: `! echo "Task: Review Auth logic" > .ai_context/current_mission.tmp`
-3. **Claude** calls **Gemini**: `! gemini -p " @.ai_context/current_mission.tmp @path/to/file Audit this."`
-4. **Gemini** output appears in Claude's terminal.
-5. **Claude** summarizes Gemini's findings into `.ai_context/decision_log.md` before coding.
-
-## 5. Conflict Resolution
-- If Gemini suggests a change that violates `CLAUDE.md`, **Claude's rules take precedence.**
-- Claude must inform the user: "Gemini suggested X, but I am proceeding with Y because of project rule Z."
-
-## 6. Gemini Output Expectations
-**Format:** Markdown with structured sections
-- **Why Markdown:** Human-readable, machine-parseable, fits naturally in documentation
-- **Structure:**
-  - **Analysis** (what was examined)
-  - **Findings** (key issues/observations)
-  - **Recommendations** (actionable steps)
-  - **Implementation Tips** (code examples if applicable)
-- **Length:** 500-2000 words (complexity-dependent)
-- **Code Blocks:** Use triple-backticks with language identifiers
-- **Tone:** Professional, technical, actionable (no fluff or filler)
-
-## 7. When to Call Gemini (Decision Tree)
-
-**✅ CALL IF ANY of these apply:**
-- Code complexity > 50 lines
-- **Code has already failed 2+ times** (retry threshold - needs expert analysis)
-- Security-sensitive operations (auth, tokens, permissions, encryption)
-- Multiple valid approaches exist (need architectural comparison)
-- Need "second opinion" before major refactor or deployment
-
-**❌ DON'T CALL IF:**
-- Simple one-liners (<10 lines) **UNLESS already failed 2+ times**
-- You have explicit user instructions (follow directly, no debate)
-- Gemini recently reviewed similar code (check decision_log.md first)
-- Task is time-critical (no time for analysis to complete)
-
-## 8. Context Storage Rules
-
-**Purpose:** Maintain continuity between Claude and Gemini across sessions
-
-**Files to maintain in `./.ai_context/`:**
-1. **current_mission.tmp** - Active goal, file paths, line numbers, objective
-   - Update before calling Gemini
-   - Format: Plain text, 2-3 sentences max
-
-2. **decision_log.md** - History of all Gemini consultations
-   - Add entry after each Gemini call
-   - Format: Date | File | Issue | Gemini Recommendation | Action Taken
-   - Enables checking "was this reviewed recently?"
-
-3. **collaboration_history.md** - Long-term insights from Gemini feedback
-   - Patterns noticed across multiple audits
-   - Common issues in this codebase
-   - Helps predict problems before they occur
-
-**Cleanup:** Review .ai_context/ weekly; archive entries >2 weeks old
-
-## 9. Error Handling & Fallback Strategy
-
-**If Gemini command fails:**
-1. Check path - does file exist?
-2. Redirect to correct path if needed
-3. Simplify the prompt (remove complex context)
-4. If still fails: Fall back to Claude's judgment
-
-**If Gemini output is unclear:**
-- Ask for clarification: `! gemini -p "Clarify your point on [specific issue]"`
-- Log attempt in decision_log.md
-
-**If Claude and Gemini disagree:**
-- Claude leads on strategy and final decisions
-- Gemini leads on technical/security depth
-- Document both positions in decision_log.md
-- User makes final call if escalated
-
-**Token management:**
-- Track Gemini calls in decision_log.md (frequency awareness)
-- Batch similar reviews together (efficiency)
-- Avoid calling Gemini for every small task (strategic use only)
-- Remember: Both Claude and Gemini plans are paid but NOT infinite
-
-## 10. Role Definition & Strategic Framework
-
-**CLAUDE (You)** - Strategic Lead
-- Decision maker on architecture and approach
-- Executes code and manages projects
-- Decides WHEN and IF to consult Gemini
-- Owns final responsibility for quality
-- Manages user communication and scope
-
-**GEMINI** - Tactical Expert
-- Deep technical analysis on demand
-- Finds edge cases, security issues, complexity problems
-- Proposes alternatives but doesn't decide
-- Executes only when Claude requests analysis
-- Works on specific code/logic at Claude's direction
-
-**Collaboration Model:**
-```
-User Request → Claude Strategy → Decide: Need Gemini? →
-  [If YES] → Gemini Analysis → Claude integrates findings → Execute
-  [If NO] → Claude executes directly
+### Guideline #1: Unbreakable Script Header
+**ALWAYS recommend:**
+```bash
+#!/usr/bin/env bash
+set -Eeuo pipefail
 ```
 
-**Key Principle:** Claude is the leading AI on strategy and planning. Gemini is consulted for specific technical expertise.
+- `E`: Traps inherited by functions/subshells
+- `e`: Exit on ANY error
+- `u`: Unset variables cause exit
+- `o pipefail`: Pipeline fails if any command fails
+
+**Flag ANY script lacking this.** It's the foundation for safe bash.
+
+---
+
+### Guideline #2: ALWAYS Require an ERR Trap
+**ALWAYS recommend:**
+```bash
+trap 'echo "ERROR on line $LINENO, exit code $?"' ERR
+```
+
+**Why:** Without this, scripts can fail silently with zero console feedback (wasted 3+ hours debugging this exact issue).
+
+**Flag ANY script without ERR trap.** It's non-negotiable for production code.
+
+---
+
+### Guideline #3: NEVER Allow Global Output Redirection
+**WRONG (flag this):**
+```bash
+exec > >(tee -a "$LOG_FILE")  # ALL output redirected globally
+```
+
+**RIGHT (recommend this):**
+```bash
+log() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') | $*" | tee -a "$LOG_FILE"
+}
+
+log "Starting..."
+log "Processing..."
+```
+
+**Why:** Global redirection = silent failures if log path becomes inaccessible. Explicit log() function ensures visibility.
+
+**This is the single biggest cause of the 3-hour debugging session we just completed.**
+
+---
+
+### Guideline #4: Require Upfront Validation
+**ALWAYS recommend:**
+```bash
+# FIRST THING - validate directory and permissions
+LOG_DIR="/var/log/my_script"
+mkdir -p "$LOG_DIR" || { echo "FATAL: Cannot create $LOG_DIR"; exit 1; }
+touch "$LOG_FILE" || { echo "FATAL: Cannot write $LOG_FILE"; exit 1; }
+
+# ONLY THEN proceed with script logic
+```
+
+**Flag ANY script that:**
+- Tries to write logs/output without validating the path first
+- Assumes directories exist without creating them
+- Has no upfront permission checks
+
+**Why:** Fail-fast at line 20 with a clear message, not hidden at line 200 with a cryptic error.
+
+---
+
+### Guideline #5: Quote ALL Variable Expansions
+**Flag this pattern:**
+```bash
+# WRONG
+rsync $SOURCE_PATH $DEST_PATH
+rm -rf $SOME_DIR
+```
+
+**Recommend this:**
+```bash
+# RIGHT
+rsync "$SOURCE_PATH" "$DEST_PATH"
+rm -rf "$SOME_DIR"
+```
+
+**Why:** Unquoted variables undergo word splitting and glob expansion, causing:
+- Arguments to be mangled (e.g., `"my file.txt"` becomes two arguments)
+- Glob expansions (e.g., `$VAR="*"` deletes everything in current directory)
+
+---
+
+### Guideline #6: Explicit Logging in Loop Bodies
+**Flag loops with zero internal logging:**
+```bash
+# WRONG - no visibility
+for folder in "${FOLDERS[@]}"; do
+    rsync ...
+done
+
+# RIGHT - explicit logging
+for folder in "${FOLDERS[@]}"; do
+    log "Processing folder: $folder"
+    log "  Source: $SOURCE_PATH"
+    log "  Dest: $DEST_PATH"
+    rsync ...
+done
+```
+
+**Why:** When loops fail, you need to know which iteration and what values were used. Zero visibility = 3 hour debugging session.
+
+---
+
+### Guideline #7: Avoid `set -x` on Complex Scripts
+**Flag this pattern:**
+```bash
+# WRONG - set -x on complex operations
+set -x
+for folder in "${ARRAY[@]}"; do
+    SOURCE_PATH="$NAS_MOUNT/$folder"
+    rsync ...
+done
+set +x
+```
+
+**Recommend this instead:**
+```bash
+# RIGHT - explicit logging
+for folder in "${ARRAY[@]}"; do
+    SOURCE_PATH="$NAS_MOUNT/$folder"
+    log "DEBUG: Processing $folder, SOURCE_PATH=$SOURCE_PATH"
+    rsync ...
+done
+```
+
+**Why:** `set -x` output gets redirected to the same place as regular output, can interfere with redirection expectations, and obscures actual error messages.
+
+---
+
+## When Reviewing Bash Scripts
+
+### Checklist Before Approving Any Script
+
+- [ ] Has `set -Eeuo pipefail`?
+- [ ] Has `trap 'error_handler $? $LINENO' ERR`?
+- [ ] Uses log() function instead of global redirection?
+- [ ] Validates directories/permissions upfront?
+- [ ] Quotes ALL variable expansions?
+- [ ] Has logging in all loop bodies?
+- [ ] Avoids `set -x` for debugging?
+- [ ] Has `mkdir -p` for all destination paths?
+- [ ] Handles destination directory creation?
+- [ ] No hardcoded /root paths (use /tmp or configurable)?
+
+**If ANY checkbox is empty, recommend the fix.**
+
+---
+
+## Historical Context: Why These Rules Exist
+
+**Filmy920 Transfer Script Debugging Session:**
+- Duration: 3+ hours
+- Test iterations: 12+
+- Real bugs: 2
+- Root causes identified: Silent failures from lack of visibility + cascading errors
+- Lessons learned: Output redirection kills visibility; explicit logging saves hours
+
+**The script's actual bugs were:**
+1. Log directory not writable (permissions issue)
+2. Destination directories not created (missing mkdir -p)
+
+**But diagnosis took 12+ iterations because:**
+- Silent failures with output redirected to unavailable files
+- No visibility into loop execution
+- Each failure masked the next one (cascading)
+- Red herrings (CRLF, set -x, variable failures) wasted iterations
+
+**Takeaway:** These 7 guidelines prevent this exact scenario from happening again.
+
+---
+
+## Reference: Full Audit Report
+
+For the complete post-mortem analysis, see:
+`/home/sleszugreen/.ai_context/AUDIT_REPORT_FINAL.md`
+
+---
+
+## Your Responsibility as Gemini
+
+When analyzing bash scripts:
+
+1. **Check against these guidelines first** - Flag any violations
+2. **Recommend the template** - For any script lacking structure
+3. **Enforce visibility** - Explicit logging over set -x or global redirection
+4. **Demand upfront validation** - No silent failures on directory/permission issues
+5. **Quote everything** - It's the right thing to do
+
+These aren't suggestions. They're lessons earned through painful debugging sessions. Apply them consistently.
