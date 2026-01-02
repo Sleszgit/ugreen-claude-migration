@@ -1,21 +1,56 @@
-TASK: Diagnose rsync silent failure in Filmy920 Phase 2 transfer script
+TASK: Debug why for loop exits immediately after ((CURRENT++))
 
-PROBLEM: Script runs successfully through STEP 5 (user confirmation prompt) but exits without starting actual transfer at STEP 6. When user enters "yes", the script immediately runs cleanup and exits.
+BREAKTHROUGH: Loop is NOW EXECUTING (was completely blocked before)
 
-SYMPTOM: Log shows "[INFO] STEP 6: Starting transfer..." immediately followed by "[INFO] Performing cleanup..." with NO rsync output or error message.
+SYMPTOM:
+- set -x trace shows:
+  + for folder in "${FOLDERS_TO_TRANSFER[@]}"
+  + (( CURRENT++ ))          ✅ SUCCEEDS
+  + cleanup                  ❌ EXITS HERE
+
+- Script NEVER reaches SOURCE_PATH="$NAS_MOUNT_POINT/$folder" line
+- Cleanup trap fires with exit_code=1
+- Log shows all debug messages before loop, then cleanup
+
+CODE SEQUENCE (lines 250-267 approx):
+```bash
+log_info "DEBUG: About to calculate TOTAL_FOLDERS"
+TOTAL_FOLDERS=${#FOLDERS_TO_TRANSFER[@]}  # Shows 4
+log_info "DEBUG: TOTAL_FOLDERS=$TOTAL_FOLDERS"
+log_info "DEBUG: FOLDERS_TO_TRANSFER has 4 elements"
+
+CURRENT=0
+log_info "DEBUG: Starting for loop with array: ${FOLDERS_TO_TRANSFER[*]}"
+
+set -x  # Enable tracing HERE
+for folder in "${FOLDERS_TO_TRANSFER[@]}"; do
+    ((CURRENT++))                           # This executes!
+    SOURCE_PATH="$NAS_MOUNT_POINT/$folder" # This does NOT appear in trace!
+    DEST_PATH="$TARGET_PATH/$folder"        # Never reached
+    
+    {
+        echo ""
+        echo "╔═══════════════════════════════════════════════════════════════╗"
+        echo "║ Transfer: $folder [$CURRENT/$TOTAL_FOLDERS]"
+```
+
+CRITICAL QUESTION:
+What could cause the script to exit with code 1 BETWEEN:
+  ((CURRENT++))  [succeeds]
+  AND
+  SOURCE_PATH="$NAS_MOUNT_POINT/$folder"  [never executes]
 
 CONTEXT:
-- Script: /mnt/lxc102scripts/transfers/filmy920-phase2-transfer.sh
-- Execution: On homelab Proxmox host (192.168.40.40) as root
-- Source: 920 NAS at 192.168.40.20:/volume2/Filmy920/Filmy920 (3.1TB, folders 2022-2025)
-- Target: /WD10TB/Filmy920 on homelab (4.7TB available)
-- Mount: /mnt/920-filmy920 (NFS v4, read-only)
-- Attempts: 12+ different configurations, all fail at same point
-- Rsync flags: -avh --progress --partial --stats --checksum --delete-after
+- set -euo pipefail is active
+- NAS_MOUNT_POINT="/mnt/920-filmy920" (verified in STEP 3)
+- folder="2022" (first loop iteration, verified in debug output)
+- The expansion ${FOLDERS_TO_TRANSFER[@]} works (loop starts)
 
-REQUIRED ANALYSIS:
-1. Why is rsync failing silently (error not captured in logs)?
-2. What could cause rsync to fail specifically at line 243-250?
-3. List all possible root causes in order of probability
-4. Suggest debugging steps to identify exact failure point
-5. Recommend code improvements to prevent this in future
+POSSIBILITIES:
+1. Variable expansion issue with $NAS_MOUNT_POINT or $folder?
+2. Shell syntax issue with variable assignment in loop?
+3. Some other command between lines that isn't visible?
+4. Issue with how set -x is capturing trace?
+5. Something in the brace block {...} execution?
+
+Ask Gemini: Why would a simple variable assignment fail here?
