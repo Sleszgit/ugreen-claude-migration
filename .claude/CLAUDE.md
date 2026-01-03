@@ -36,34 +36,25 @@
 
 ---
 
-## ⚠️ SSH & API Access (Status - 28 Dec 2025)
+## 🌐 NETWORK TOPOLOGY (Updated 03 Jan 2026)
 
-**UGREEN Infrastructure:**
-- ❌ SSH container → Proxmox host: **NOT configured**
-- ✅ **USE:** Proxmox API with tokens instead
-  - UGREEN cluster: `~/.proxmox-api-token`
-  - UGREEN VM 100: `~/.proxmox-vm100-token`
+**I RUN HERE:** LXC 102 @ 192.168.40.82 (on UGREEN Proxmox 192.168.40.60)
 
-**Homelab Access (Session 45 - COMPLETED):**
-- ✅ SSH homelab → UGREEN: **OPERATIONAL**
-  - User: `ugreen-homelab-ssh` on homelab (192.168.40.40)
-  - SSH key: UGREEN public key in authorized_keys
-  - Firewall: Fixed (cluster.fw corrected)
-  - Passwordless sudo: ✅ Configured for all Proxmox commands
-  - Tested commands: pveversion, qm list, pct list, zpool list
-  - See `docs/claude-sessions/SESSION-45-HOMELAB-SSH-COMPLETION.md` for details
+| Device | IP | How to Connect | Status |
+|--------|-----|----------------|--------|
+| **UGREEN Host** | 192.168.40.60 | `ssh ugreen-host` (port 22022) | ✅ |
+| **Homelab** | 192.168.40.40 | `ssh homelab` | ✅ |
+| **920 NAS** | 192.168.40.20 | `ssh backup-user@192.168.40.20` | ✅ |
+| **Pi400** | 192.168.40.50 | Pi-Hole DNS | ✅ |
+| **Pi3B** | 192.168.40.30 | Technitium DNS | ✅ |
+| **UGREEN API** | 192.168.40.60:8006 | curl with `~/.proxmox-api-token` | ✅ |
 
-**Available Commands from UGREEN via SSH:**
-- `sudo qm list/status/create/delete` - VM management
-- `sudo pct list/status/create/delete` - Container management
-- `sudo pvesh get/set` - Proxmox API CLI
-- `sudo pveum user/acl` - User/permission management
-- `sudo zpool/zfs` - ZFS pool management
-- `sudo systemctl` - Service management
-- `sudo pveversion` - Version info
+**⚠️ NEVER CONFUSE:**
+- **192.168.40.60** = UGREEN (where I run)
+- **192.168.40.40** = HOMELAB (main Proxmox server)
 
-**API Setup Status:** ✅ Properly configured for UGREEN (25 Dec 2025)
-→ See `PROXMOX-API-SETUP.md` for full details
+**Full topology:** See `~/.claude/ENVIRONMENT.yaml`
+**Status check:** `~/scripts/infrastructure/check-env-status.sh`
 
 ---
 
@@ -270,6 +261,6 @@ sudo reboot
 
 ---
 
-**Last Updated:** 28 Dec 2025  
+**Last Updated:** 03 Jan 2026  
 **Timezone:** Europe/Warsaw  
 **Date Format:** DD/MM/YYYY

@@ -1,0 +1,164 @@
+# =============================================================================
+# CLAUDE ENVIRONMENT CONTEXT - SINGLE SOURCE OF TRUTH
+# =============================================================================
+# Last Updated: 2026-01-03
+# Purpose: Network topology and connection methods for Claude Code
+# AI: Parse this file to understand the environment. Do not guess.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# WHERE I AM RUNNING
+# -----------------------------------------------------------------------------
+current_location:
+  name: "LXC 102 (ugreen-ai-terminal)"
+  ip: "192.168.40.82"
+  hostname: "ugreen-ai-terminal"
+  user: "sleszugreen"
+  hosted_on: "UGREEN Proxmox Host (192.168.40.60)"
+  notes: "This is where Claude Code runs. All commands execute here by default."
+
+# -----------------------------------------------------------------------------
+# NETWORK TOPOLOGY
+# -----------------------------------------------------------------------------
+# Primary Network: 192.168.40.0/24 (Main homelab subnet)
+# Secondary Network: 10.10.10.0/24 (VLAN10 for VMs)
+
+hosts:
+  # ---------------------------------------------------------------------------
+  # PROXMOX HOSTS
+  # ---------------------------------------------------------------------------
+  - name: "UGREEN Proxmox Host"
+    alias: "ugreen-host"
+    ip: "192.168.40.60"
+    role: "Proxmox VE on UGREEN DXP4800+. Hosts LXC 102 (where I run)."
+    web_ui: "https://192.168.40.60:8006"
+    connections:
+      - type: "proxmox-api"
+        status: "WORKING"
+        method: "curl with API token"
+        token_id: "claude-reader@pam!claude-token"
+        token_file: "~/.proxmox-api-token"
+        endpoint: "https://192.168.40.60:8006/api2/json/"
+        notes: "Read-only access (PVEAuditor role). Use for Proxmox queries."
+      - type: "ssh"
+        status: "WORKING"
+        method: "ssh ugreen-host"
+        port: 22022
+        user: "sshclaudeugreenhost"
+        notes: "SSH to Proxmox host. Use for system commands."
+
+  - name: "Homelab Proxmox Server"
+    alias: "homelab"
+    ip: "192.168.40.40"
+    role: "Main Proxmox server. i5-13500, 96GB RAM. Runs VMs and LXCs."
+    web_ui: "https://192.168.40.40:8006"
+    connections:
+      - type: "ssh"
+        status: "WORKING"
+        method: "ssh homelab"
+        user: "ugreen-homelab-ssh"
+        port: 22
+        notes: "Passwordless sudo configured for Proxmox commands."
+      - type: "proxmox-api"
+        status: "CONFIGURED"
+        token_file: "~/.proxmox-homelab-token"
+        notes: "API token exists but SSH preferred."
+
+  # ---------------------------------------------------------------------------
+  # NAS DEVICES
+  # ---------------------------------------------------------------------------
+  - name: "Synology DS920+ (920 NAS)"
+    alias: "920-nas"
+    ip: "192.168.40.20"
+    role: "Synology NAS. Source for media transfers (Filmy920, TV Shows)."
+    connections:
+      - type: "ssh"
+        status: "WORKING"
+        method: "ssh backup-user@192.168.40.20"
+        user: "backup-user"
+        notes: "Used for rsync transfers and file operations."
+      - type: "nfs"
+        status: "WORKING"
+        mount: "/volume2/Filmy920/Filmy920"
+        notes: "NFSv4 read-only. Used for large transfers."
+      - type: "smb"
+        method: "\\\\192.168.40.20\\..."
+        notes: "Samba shares available."
+
+  # ---------------------------------------------------------------------------
+  # RASPBERRY PI DEVICES
+  # ---------------------------------------------------------------------------
+  - name: "Raspberry Pi 400"
+    alias: "pi400"
+    ip: "192.168.40.50"
+    role: "Pi-Hole DNS server. Primary DNS for network."
+    connections:
+      - type: "ssh"
+        status: "UNKNOWN"
+        method: "ssh pi@192.168.40.50"
+        notes: "Standard Pi SSH. Verify before use."
+      - type: "web"
+        method: "http://192.168.40.50/admin"
+        notes: "Pi-Hole admin interface."
+
+  - name: "Raspberry Pi 3B"
+    alias: "pi3b"
+    ip: "192.168.40.30"
+    role: "Technitium DNS server. Failover DNS."
+    connections:
+      - type: "ssh"
+        status: "UNKNOWN"
+        method: "ssh pi@192.168.40.30"
+        notes: "Standard Pi SSH. Verify before use."
+      - type: "web"
+        method: "http://192.168.40.30:5380"
+        notes: "Technitium admin interface (default port)."
+
+# -----------------------------------------------------------------------------
+# API TOKENS (Stored in ~/.proxmox-*-token files)
+# -----------------------------------------------------------------------------
+api_tokens:
+  - name: "UGREEN Cluster Token"
+    file: "~/.proxmox-api-token"
+    token_id: "claude-reader@pam!claude-token"
+    target: "192.168.40.60 (UGREEN)"
+    role: "PVEAuditor (read-only)"
+    use_for: "Query LXC/VM status, cluster info, logs"
+
+  - name: "UGREEN VM100 Token"
+    file: "~/.proxmox-vm100-token"
+    token_id: "vm100-reader@pam!vm100-token"
+    target: "192.168.40.60 (UGREEN VM100)"
+    role: "PVEAuditor (read-only)"
+    use_for: "Query VM 100 specifically"
+
+  - name: "Homelab Token"
+    file: "~/.proxmox-homelab-token"
+    target: "192.168.40.40 (Homelab)"
+    role: "PVEAuditor (read-only)"
+    use_for: "Query homelab Proxmox via API"
+
+  - name: "Executor Token"
+    file: "~/.proxmox-executor-token"
+    target: "Unknown"
+    notes: "Purpose unclear. Verify before use."
+
+# -----------------------------------------------------------------------------
+# QUICK REFERENCE: HOW TO CONNECT
+# -----------------------------------------------------------------------------
+quick_reference:
+  to_homelab_proxmox: "ssh homelab"
+  to_920_nas: "ssh backup-user@192.168.40.20"
+  to_ugreen_api: "curl -k -H 'Authorization: PVEAPIToken=claude-reader@pam!claude-token=$(cat ~/.proxmox-api-token)' https://192.168.40.60:8006/api2/json/..."
+  to_pi400: "ssh pi@192.168.40.50 (verify first)"
+  to_pi3b: "ssh pi@192.168.40.30 (verify first)"
+
+# -----------------------------------------------------------------------------
+# COMMON MISTAKES TO AVOID
+# -----------------------------------------------------------------------------
+warnings:
+  - "192.168.40.60 is UGREEN (where I run), NOT homelab"
+  - "192.168.40.40 is HOMELAB, the main Proxmox server"
+  - "I run INSIDE LXC 102 on UGREEN"
+  - "Use 'ssh ugreen-host' for UGREEN Proxmox operations"
+  - "Use 'ssh homelab' for Homelab Proxmox operations"
