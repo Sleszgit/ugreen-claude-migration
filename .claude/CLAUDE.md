@@ -264,3 +264,42 @@ sudo reboot
 **Last Updated:** 03 Jan 2026  
 **Timezone:** Europe/Warsaw  
 **Date Format:** DD/MM/YYYY
+
+---
+
+## 🏗️ Script Execution Architecture (Added Session 84)
+
+**PRINCIPLE: Infrastructure scripts execute on their target host**
+
+### Default Execution Locations:
+
+**UGREEN Proxmox Host Scripts:**
+- Network configuration changes
+- Storage/filesystem operations  
+- System-level configs
+- Host-level hardening
+
+**Execution:** `ssh -p 22022 ugreen-host "sudo /path/to/script.sh"`
+
+**Rationale:**
+- ✅ No SSH connection dependency (script is local once started)
+- ✅ No transmission lag or timeouts
+- ✅ Script completion independent of client connection
+- ✅ Simpler architecture, fewer failure modes
+- ✅ Logs stay on the host that ran them
+
+**LXC 102 Scripts:**
+- Container-specific operations
+- Proxmox API calls (VMs, containers)
+- Local container management
+
+**Execution:** Direct (running in LXC 102)
+
+**This eliminates overcomplicated patterns like:**
+- ❌ nohup/screen for remote persistence
+- ❌ Logging back to client for visibility
+- ❌ Connection-dependent rollback procedures
+- ❌ SSH tunnel dependencies
+
+**Future Sessions:** When designing infrastructure scripts, ask: "Where does this script need to run?" and execute it there directly.
+
