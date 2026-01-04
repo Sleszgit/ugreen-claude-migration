@@ -1,0 +1,27 @@
+auto lo
+iface lo inet loopback
+
+iface nic0 inet manual
+
+iface nic1 inet manual
+    post-up /sbin/ethtool -K nic1 rx-vlan-filter off tx-vlan-offload off
+
+auto vmbr0
+iface vmbr0 inet manual
+    bridge-ports nic1
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-pvid 40
+    bridge-vids 10 40
+
+auto vmbr0.40
+iface vmbr0.40 inet static
+    address 192.168.40.60/24
+    gateway 192.168.40.1
+
+auto vmbr0.10
+iface vmbr0.10 inet static
+    address 10.10.10.60/24
+
+source /etc/network/interfaces.d/*
