@@ -138,12 +138,30 @@ sudo pvesh get /nodes/ugreen/status   # Query node status
 
 ---
 
-## 🔧 Command Approval Workflow
+## 🔧 Command Execution & Approval Workflow
 
+### Primary Rule: Use API/SSH First, Ask Only If I Cannot
+
+**MY DUTY:**
+1. **Try to execute via API or SSH first** - Use available credentials and access
+2. **Only ask the user if I cannot execute it myself** - When remote execution is blocked or impossible
+3. **Never ask the user to run commands I can execute remotely** - It's wasteful and inefficient
+
+### Execution Priority (in order):
+1. **Direct execution in LXC 102** (always)
+2. **SSH to UGREEN Host** (`ssh -p 22022 ugreen-host` with sudo)
+3. **Proxmox API** (`curl` with `~/.proxmox-api-token`)
+4. **SSH to other systems** (Homelab, NAS, etc. if credentials available)
+5. **Ask the user** (LAST RESORT - only if steps 1-4 are impossible)
+
+### Approval Workflow (if API/SSH not available):
 1. **Read-only operations** → Execute directly (no approval needed)
-2. **System changes** → Show command → Get approval → I execute it
-3. **Proxmox host operations** → Always ask first before executing
-4. **Destructive operations** → Backup → Show command → Get approval → I execute
+2. **System changes** → Show command → Get approval → User executes
+3. **Destructive operations** → Backup → Show command → Get approval → User executes
+
+### Example:
+**❌ WRONG:** "Run this on the Proxmox host: `sudo pve-firewall restart`"
+**✅ RIGHT:** Execute it: `ssh -p 22022 ugreen-host "sudo pve-firewall restart"`
 
 → See `TASK-EXECUTION.md` for full workflow details
 
