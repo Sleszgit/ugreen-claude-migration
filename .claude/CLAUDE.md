@@ -293,17 +293,20 @@ sudo reboot
 
 **UGREEN Proxmox Host Scripts:**
 - Network configuration changes
-- Storage/filesystem operations  
+- Storage/filesystem operations
 - System-level configs
 - Host-level hardening
 
-**Execution:** `ssh -p 22022 ugreen-host "sudo /path/to/script.sh"`
+**Execution:** Run directly on UGREEN Proxmox host console (user executes):
+```bash
+sudo bash /nvme2tb/lxc102scripts/scriptname.sh
+```
 
 **Rationale:**
-- ✅ No SSH connection dependency (script is local once started)
-- ✅ No transmission lag or timeouts
-- ✅ Script completion independent of client connection
-- ✅ Simpler architecture, fewer failure modes
+- ✅ User has direct console access to UGREEN host
+- ✅ User runs scripts directly, maintaining full control
+- ✅ No SSH overhead or connection dependencies
+- ✅ Immediate visibility and interaction capability
 - ✅ Logs stay on the host that ran them
 
 **LXC 102 Scripts:**
@@ -311,7 +314,7 @@ sudo reboot
 - Proxmox API calls (VMs, containers)
 - Local container management
 
-**Execution:** Direct (running in LXC 102)
+**Execution:** Direct (Claude Code runs in LXC 102, user only initiates)
 
 **This eliminates overcomplicated patterns like:**
 - ❌ nohup/screen for remote persistence
@@ -319,7 +322,11 @@ sudo reboot
 - ❌ Connection-dependent rollback procedures
 - ❌ SSH tunnel dependencies
 
-**Future Sessions:** When designing infrastructure scripts, ask: "Where does this script need to run?" and execute it there directly.
+**Future Sessions:** When designing infrastructure scripts:
+1. Ask: "Where does this script need to run?"
+2. Create script and place in `/mnt/lxc102scripts/` (bind mount path)
+3. Provide command for user to run directly on target host: `sudo bash /nvme2tb/lxc102scripts/scriptname.sh`
+4. User executes directly on UGREEN console - Claude Code does NOT try to execute infrastructure scripts
 
 ---
 
