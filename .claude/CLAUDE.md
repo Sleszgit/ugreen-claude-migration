@@ -321,3 +321,53 @@ sudo reboot
 
 **Future Sessions:** When designing infrastructure scripts, ask: "Where does this script need to run?" and execute it there directly.
 
+---
+
+## 💾 Session Checkpoint - The SAVE Command
+
+**Usage:** Write `SAVE` (in capital letters) at any point to trigger a checkpoint.
+
+### What SAVE Does
+
+When you write `SAVE`, I will:
+
+1. **Document the current session** - Create/update session file in `~/docs/claude-sessions/`
+2. **Save all relevant files** - Include scripts, configs, documentation
+3. **Commit to GitHub** - Push changes with meaningful commit message
+4. **Verify and report** - Show commit hash and list of files pushed
+
+### Session Documentation Format
+
+Each session gets a timestamped file:
+```
+~/docs/claude-sessions/SESSION-95-[DESCRIPTION].md
+```
+
+File includes:
+- Date and time
+- Objectives completed
+- Key decisions made
+- Files created/modified
+- Next steps / pending items
+- GitHub commit hash
+
+### Example Workflow
+
+```
+User: Create Phase 0 script
+Claude: [Creates script + documentation]
+User: SAVE
+Claude: [Commits everything to GitHub]
+Claude: ✅ Committed: abc1234 - Session 95: Phase 0 VLAN Setup
+```
+
+### Benefits
+
+- ✅ Regular checkpoints prevent data loss
+- ✅ Easy rollback if needed (git history)
+- ✅ Session history preserved
+- ✅ Clean documentation trail
+- ✅ Team visibility into progress
+
+**Updated:** 06 Jan 2026
+
