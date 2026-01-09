@@ -203,6 +203,61 @@ sudo reboot
 
 ---
 
+## 🔥 Firewall Change Safety Protocol (Added Session 101)
+
+**CRITICAL: Before modifying ANY firewall rules affecting VLANs or container/VM access:**
+
+### The "Ping Works But SSH Fails" Trap
+
+**If cross-VLAN ping works but TCP services (SSH/HTTP) fail:**
+- ❌ Do NOT assume the service is down
+- ❌ Do NOT assume IP config is wrong (ping proves routing works)
+- ✅ Check UFW `ufw route allow` rules (forwarding, not host rules)
+
+### Key Distinction
+```bash
+# Opens port on HOST only - DOES NOT help containers/VMs
+ufw allow 22/tcp
+
+# Allows FORWARDED traffic through host TO containers/VMs
+ufw route allow proto tcp from 192.168.40.0/24 to 10.10.10.0/24 port 22
+```
+
+### Pre-Change Checklist
+
+Before ANY firewall changes on UGREEN host:
+
+1. **Document current state:**
+   ```bash
+   sudo ufw status verbose > /tmp/ufw-backup-$(date +%Y%m%d).txt
+   grep DEFAULT_FORWARD_POLICY /etc/default/ufw
+   ```
+
+2. **Test LXC102 connectivity BEFORE changes:**
+   ```bash
+   # From LXC102, verify we can reach the host
+   ping -c 1 192.168.40.60
+   ssh -p 22022 ugreen-host "echo 'SSH OK'"
+   ```
+
+3. **After changes, IMMEDIATELY test from LXC102:**
+   ```bash
+   ping -c 1 192.168.40.60
+   ssh -p 22022 ugreen-host "echo 'SSH OK'"
+   ```
+
+4. **If SSH fails but ping works:** Problem is `ufw route` rules, NOT service/IP config
+
+### Real Incident Reference
+
+**Session 100-101:** VLAN10 firewall changes caused 3+ hours of LXC102 connectivity loss. Root cause: `DEFAULT_FORWARD_POLICY="DROP"` blocking forwarded TCP traffic.
+
+→ See `INFRASTRUCTURE.md` → "Cross-VLAN Connectivity Troubleshooting" for full diagnostic protocol
+
+**Updated:** 09 Jan 2026
+
+---
+
 ## 📊 Key Files & Directories
 
 **Confirmed paths in LXC 102:**
@@ -279,8 +334,8 @@ sudo reboot
 
 ---
 
-**Last Updated:** 03 Jan 2026  
-**Timezone:** Europe/Warsaw  
+**Last Updated:** 09 Jan 2026
+**Timezone:** Europe/Warsaw
 **Date Format:** DD/MM/YYYY
 
 ---

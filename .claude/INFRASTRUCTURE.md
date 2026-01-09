@@ -191,6 +191,91 @@ bash /mnt/lxc102scripts/test-api-from-container.sh
 
 ---
 
+## Cross-VLAN Connectivity Troubleshooting
+
+**⚠️ CRITICAL PATTERN: "Ping Works But SSH/HTTP Fails"**
+
+This is the most common misdiagnosis in cross-VLAN troubleshooting. If you can ping a container/VM but TCP services (SSH, HTTP, etc.) fail:
+
+**STOP - Do NOT assume:**
+- ❌ The service is down inside the container
+- ❌ The IP configuration is wrong (ping proves routing exists)
+
+**IDENTIFY - The issue is almost certainly:**
+- ✅ A **firewall forwarding rule** on the host blocking TCP/UDP
+
+### Root Cause Explanation
+
+Linux firewalls (UFW/iptables) often:
+1. Allow ICMP (ping) by default
+2. Block forwarded TCP/UDP traffic when `DEFAULT_FORWARD_POLICY="DROP"`
+
+**Critical distinction:**
+```bash
+# Opens port on HOST only - does NOT help containers/VMs
+ufw allow 22/tcp
+
+# Allows FORWARDED traffic through host TO containers/VMs
+ufw route allow proto tcp from 192.168.40.0/24 to 10.10.10.0/24 port 22
+```
+
+### Diagnostic Protocol
+
+When "Ping works but SSH/HTTP fails" across VLANs:
+
+**Step 1: Confirm the pattern**
+```bash
+# From management network (e.g., LXC102)
+ping 10.10.10.100        # Works? → Routing is fine
+ssh user@10.10.10.100    # Fails? → Firewall forwarding issue
+```
+
+**Step 2: Check UFW forwarding policy on the HOST**
+```bash
+# On Proxmox host
+grep DEFAULT_FORWARD_POLICY /etc/default/ufw
+# If "DROP" → forwarded traffic is blocked by default
+```
+
+**Step 3: Check existing route rules**
+```bash
+# On Proxmox host
+sudo ufw status | grep -i route
+```
+
+**Step 4: Add route allow rules (if missing)**
+```bash
+# Allow SSH from management VLAN to isolated VLAN
+sudo ufw route allow proto tcp from 192.168.40.0/24 to 10.10.10.0/24 port 22
+
+# Allow HTTP/HTTPS
+sudo ufw route allow proto tcp from 192.168.40.0/24 to 10.10.10.0/24 port 80
+sudo ufw route allow proto tcp from 192.168.40.0/24 to 10.10.10.0/24 port 443
+```
+
+### Real-World Example (Session 100-101)
+
+**Scenario:** VM100 (10.10.10.100 on VLAN10) unreachable from LXC102 (192.168.40.82)
+- Ping: ✅ Worked
+- SSH: ❌ Timeout
+- Console: ✅ VM responsive
+
+**Root cause:** UFW on UGREEN host had `DEFAULT_FORWARD_POLICY="DROP"` and no `ufw route allow` rules for cross-VLAN TCP traffic.
+
+**Solution:** Added `ufw route allow` rules for management → VLAN10 traffic.
+
+### Prevention Checklist
+
+Before making firewall changes that affect container/VM connectivity:
+
+- [ ] Note current `DEFAULT_FORWARD_POLICY` setting
+- [ ] List existing `ufw route` rules
+- [ ] Test ping AND TCP connectivity before changes
+- [ ] When adding VLAN isolation, add `ufw route allow` for management access
+- [ ] Test from LXC102 immediately after changes
+
+---
+
 ## Troubleshooting Access Issues
 
 **Container can't reach Proxmox API?**
