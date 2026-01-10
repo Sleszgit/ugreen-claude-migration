@@ -1,3 +1,29 @@
+# Claude Code Project Guidelines
+
+**Last Updated:** January 10, 2026
+**Established By:** Session 108 - Docker Deployment & Workflow Refinement
+
+---
+
+## CRITICAL: No Heredoc/EOF Commands Rule
+
+**PRINCIPLE: NEVER use heredoc or EOF patterns (`cat <<EOF ... EOF`, `sudo tee <<EOF ... EOF`) to give commands.**
+
+### Alternatives (in priority order):
+
+1. **Use the Write tool** - For creating files locally, then deploy via SSH
+2. **Use echo with quoting** - For simple multi-line content via shell
+3. **Ask you to paste content** - If alternatives don't work
+4. **STOP and get approval** - If heredoc is the ONLY option, state it explicitly and wait
+
+### When I Cannot Find an Alternative:
+- I stop immediately
+- I explain why alternatives don't work
+- I explicitly state: "I need to use a heredoc command. Do you want me to proceed?"
+- I wait for your approval
+
+---
+
 # GEMINI GUIDELINES: Bash Script Analysis & Recommendations
 
 **Last Updated:** January 2, 2026

@@ -167,6 +167,43 @@ sudo pvesh get /nodes/ugreen/status   # Query node status
 
 ---
 
+## 📝 CRITICAL: No Heredoc/EOF Commands Rule
+
+**PRINCIPLE: NEVER use heredoc or EOF patterns (`cat <<EOF ... EOF`, `sudo tee <<EOF ... EOF`) to give you commands.**
+
+### Alternatives (in priority order):
+
+1. **Use the Write tool** - For creating files that I can then deploy via SSH
+   - This is the preferred method for configuration files
+   - I create the file, then copy it to the target system
+
+2. **Use echo with proper quoting** - For simple single-line or multi-line content
+   - Example: `echo "line1" > file.txt` followed by `echo "line2" >> file.txt`
+   - Works for small configs that don't require EOF
+
+3. **Ask you to paste content** - If neither option works
+   - I provide a clear path and you paste the content directly
+
+4. **Tell you I cannot do it and wait for instructions** - If ALL above options fail
+   - I explicitly state: "I cannot do this without a heredoc command"
+   - I wait for your guidance before proceeding
+
+### When I CANNOT Find an Alternative:
+
+**If I determine that a heredoc command is the ONLY way:**
+1. I STOP immediately
+2. I explain why the alternatives don't work
+3. I tell you: "I need to use a heredoc command for this. Do you want me to proceed?"
+4. I wait for your approval before giving you the command
+
+### Example Workflow:
+**❌ WRONG:** "Run this: `ssh vm "sudo tee /etc/docker/daemon.json <<EOF ...`"
+**✅ RIGHT:** I use the Write tool to create the file locally, then copy it to the VM
+
+**Updated:** 10 Jan 2026
+
+---
+
 ## ⚠️ System Reboot Safety Protocol
 
 **CRITICAL RULE: Before ANY planned system reboot, always:**
