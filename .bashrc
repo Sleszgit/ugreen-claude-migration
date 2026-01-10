@@ -125,3 +125,4 @@ fi
 # Gemini CLI Configuration
 export PATH="$HOME/.local/bin:$PATH"
 [ -f ~/.gemini-api-key ] && source ~/.gemini-api-key
+alias view_ai_context='cat ./.ai_context/* 2>/dev/null'
