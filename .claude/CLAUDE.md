@@ -422,6 +422,135 @@ sudo bash /nvme2tb/lxc102scripts/scriptname.sh
 
 ---
 
+## 🗂️ ZFS Storage Best Practices - Datasets vs Folders
+
+**PRINCIPLE: When creating data locations on Proxmox storage pools, ALWAYS suggest datasets instead of simple folders.**
+
+### When This Applies
+
+**Trigger:** User asks to create data storage location on ZFS pools (storage, SeriesUgreen, etc.)
+
+**Examples:**
+- "Create a folder for movies on the storage pool"
+- "Set up a directory for TV shows"
+- "I need space for backups in storage/Media"
+
+### Recommended Approach
+
+**BEFORE creating, ask clarifying questions:**
+
+1. **What data will be stored?** (media, backups, archives, etc.)
+2. **Expected size?** (rough estimate)
+3. **Retention requirements?** (permanent, backup windows, etc.)
+4. **Performance needs?** (random access, sequential, etc.)
+
+**THEN suggest dataset creation:**
+
+```bash
+# INSTEAD OF: mkdir /storage/Media/MyFolder
+# USE:
+sudo zfs create -o recordsize=1M storage/Media/MyDataset  # For media files
+sudo zfs create storage/Media/MyDataset                   # For general data
+```
+
+### Why Datasets Are Superior to Folders
+
+| Aspect | Folder | Dataset | Benefit |
+|--------|--------|---------|---------|
+| **Compression** | Pool-wide only | Per-dataset tuning | Save space, tune per-content type |
+| **Recordsize** | Pool-wide (128K) | Per-dataset (1M for media) | Optimize for file access patterns |
+| **Snapshots** | Can't snapshot selectively | Independent snapshots | Granular backup & recovery |
+| **Quotas** | Not enforced | Can set per-dataset | Prevent runaway usage |
+| **Deduplication** | Can't enable selectively | Per-dataset option | Space savings where needed |
+| **Monitoring** | Mixed with other data | Independent stats | Clear usage tracking |
+| **Deletion** | Must manually track | Clean dataset destroy | Safe cleanup with `zfs destroy` |
+
+### Real-World Impact - This Session
+
+**Problem from Session 111:**
+- SeriesUgreen: 12.9TB stored as **1,000+ simple folders**
+- storage/Media: 12.4TB split between **folders and datasets**
+- Impact: No per-collection tuning, no independent snapshots, harder to manage
+
+**Solution in this migration:**
+- Created `Seagate-20TB-mirror/SeriesHomelab` as **dataset with recordsize=1M**
+- Created `Seagate-20TB-mirror/FilmsHomelab` as **dataset with recordsize=1M**
+- Result: Optimized for media, can snapshot independently, can apply compression per-dataset
+
+### Suggested Configuration by Content Type
+
+**For Media (Movies, TV Shows):**
+```bash
+sudo zfs create -o recordsize=1M -o compression=lz4 storage/Media/MyMediaDataset
+```
+- `recordsize=1M`: Large files benefit from larger record size
+- `compression=lz4`: Fast compression for streams, good ratio
+
+**For Backups:**
+```bash
+sudo zfs create -o recordsize=128K storage/Backups/MyBackup
+```
+- Standard recordsize for varied file sizes
+- No compression (backups often already compressed)
+
+**For Archives:**
+```bash
+sudo zfs create -o recordsize=256K -o compression=zstd storage/Archives/MyArchive
+```
+- Medium recordsize for mixed content
+- Better compression ratio with zstd (slower but better)
+
+**For Database/Random Access:**
+```bash
+sudo zfs create -o recordsize=4K storage/Databases/MyDB
+```
+- Small recordsize for random access patterns
+- Minimal compression overhead
+
+### Questions to Ask User
+
+When they request a data location:
+
+```
+I notice you're creating a storage location on a ZFS pool.
+
+Before we proceed, a few questions:
+
+1. **What type of data?** (media, backups, archives, databases, etc.)
+2. **Approximate size?** (helps tune recordsize)
+3. **Access pattern?** (sequential reading, random access, etc.)
+
+Instead of a simple folder, I recommend creating a ZFS dataset. This gives you:
+- Independent snapshots and recovery
+- Per-dataset compression tuning
+- Quota enforcement
+- Better space efficiency for media files
+
+Would you like me to create this as a dataset instead?
+```
+
+### Implementation Rule
+
+**MY BEHAVIOR:**
+1. User requests a data location on ZFS pool
+2. **I STOP and ask the clarifying questions above**
+3. **I recommend dataset creation** (not mkdir)
+4. **I explain the benefits** with reference to content type
+5. Only proceed with folder creation if user explicitly prefers it
+
+### Historical Reference
+
+**Session 111 - ZFS Structure Audit:**
+- Identified 12.4TB in simple folders that should have been datasets
+- SeriesUgreen pool has 1,000+ show folders with no independent management
+- Solution: Create datasets for Homelab migration with proper tuning
+
+**Root Cause:** No earlier policy to suggest datasets first.
+
+**Prevention:** This guideline ensures future storage locations use ZFS's full capabilities.
+
+---
+
 ## 💾 Session Checkpoint - The SAVE Command
 
 **Usage:** Write `SAVE` (in capital letters) at any point to trigger a checkpoint.

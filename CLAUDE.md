@@ -1,7 +1,24 @@
 # Claude Code Project Guidelines
 
-**Last Updated:** January 10, 2026
+**Last Updated:** January 11, 2026
 **Established By:** Session 108 - Docker Deployment & Workflow Refinement
+
+---
+
+## 🗂️ ZFS Storage Data Locations - DATASETS First!
+
+**CRITICAL PRINCIPLE:** When user requests a data location on ZFS storage pools, **ALWAYS suggest creating a ZFS dataset instead of a simple folder**, even if they ask for a folder.
+
+**Key rule:** Ask clarifying questions about content type, then recommend dataset with appropriate tuning:
+- **Media:** `recordsize=1M -o compression=lz4`
+- **Backups:** `recordsize=128K`
+- **Archives:** `recordsize=256K -o compression=zstd`
+
+**Why:** ZFS datasets provide per-location snapshots, compression tuning, quotas, and independent management that simple folders cannot.
+
+**Reference:** See `~/.claude/CLAUDE.md` → "ZFS Storage Best Practices - Datasets vs Folders" for full guidelines.
+
+**Historical context:** Session 111 audit revealed 12.4TB in simple folders that should have been datasets.
 
 ---
 
