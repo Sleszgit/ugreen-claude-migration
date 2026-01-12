@@ -1,5 +1,5 @@
 {
-  "numStartups": 134,
+  "numStartups": 137,
   "theme": "light",
   "tipsHistory": {
     "new-user-warmup": 7,
@@ -31,7 +31,7 @@
     "custom-commands": 132,
     "git-worktrees": 133
   },
-  "promptQueueUseCount": 384,
+  "promptQueueUseCount": 386,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,
@@ -88,9 +88,9 @@
     "tengu_post_compact_survey": false,
     "tengu_streaming_tool_execution2": false
   },
-  "lastReleaseNotesSeen": "2.1.4",
+  "lastReleaseNotesSeen": "2.1.5",
   "userID": "deba34e3d6d4bb79f629ddfe430d64d5f6e70f5e3be67251e07172fe5ea17df9",
-  "changelogLastFetched": 1768101862224,
+  "changelogLastFetched": 1768193737724,
   "firstStartTime": "2025-12-18T04:35:54.872Z",
   "sonnet45MigrationComplete": true,
   "sonnet45MigrationTimestamp": 1766032554890,
@@ -150,29 +150,29 @@
         "packageManager": null
       },
       "hasCompletedProjectOnboarding": true,
-      "lastCost": 0.8293246000000001,
-      "lastAPIDuration": 448308,
-      "lastAPIDurationWithoutRetries": 448189,
-      "lastToolDuration": 141189,
-      "lastDuration": 2263225,
-      "lastLinesAdded": 281,
+      "lastCost": 0.7950667999999996,
+      "lastAPIDuration": 803950,
+      "lastAPIDurationWithoutRetries": 803841,
+      "lastToolDuration": 67300,
+      "lastDuration": 2762636,
+      "lastLinesAdded": 174,
       "lastLinesRemoved": 0,
-      "lastTotalInputTokens": 44296,
-      "lastTotalOutputTokens": 34527,
-      "lastTotalCacheCreationInputTokens": 303244,
-      "lastTotalCacheReadInputTokens": 2333386,
+      "lastTotalInputTokens": 24881,
+      "lastTotalOutputTokens": 39904,
+      "lastTotalCacheCreationInputTokens": 208714,
+      "lastTotalCacheReadInputTokens": 3097733,
       "lastTotalWebSearchRequests": 0,
       "lastModelUsage": {
         "claude-haiku-4-5-20251001": {
-          "inputTokens": 44296,
-          "outputTokens": 34527,
-          "cacheReadInputTokens": 2333386,
-          "cacheCreationInputTokens": 303244,
+          "inputTokens": 24881,
+          "outputTokens": 39904,
+          "cacheReadInputTokens": 3097733,
+          "cacheCreationInputTokens": 208714,
           "webSearchRequests": 0,
-          "costUSD": 0.8293246000000001
+          "costUSD": 0.7950667999999996
         }
       },
-      "lastSessionId": "39dd7656-e629-4a14-8768-42fa0cf14b27",
+      "lastSessionId": "5a73d624-1ddb-4baa-b040-181837b33d4f",
       "exampleFilesGeneratedAt": 1768013683948
     }
   },
@@ -180,11 +180,11 @@
     "20e1bfdc-0610-4a84-aec8-470c2a13f487": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1768144978883
+      "timestamp": 1768193737591
     }
   },
   "feedbackSurveyState": {
-    "lastShownTime": 1768016766017
+    "lastShownTime": 1768147870806
   },
   "mcpServers": {
     "filesystem": {
@@ -219,6 +219,12 @@
     "e9fa80ab-8815-4c7d-9a44-1251ba76d529": {
       "grove_enabled": true,
       "timestamp": 1768119740354
+    }
+  },
+  "skillUsage": {
+    "homelab": {
+      "usageCount": 1,
+      "lastUsedAt": 1768174164152
     }
   }
 }
