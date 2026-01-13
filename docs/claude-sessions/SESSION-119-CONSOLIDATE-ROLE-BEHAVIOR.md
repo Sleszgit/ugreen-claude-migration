@@ -54,29 +54,77 @@ When conflicts exist:
 
 ---
 
-## ✅ Verification
+## ✅ Verification & Updates
 
-**Git Status:**
-```
-Main branch, all changes committed
-Commit: 27b46f3 "Session 119: Consolidate role, tone, and execution standards"
-```
+**Phase 1 - Initial Consolidation:**
+- Commit: `27b46f3` - Consolidated role, tone, execution standards
+- Both files updated with new role definition and behavior rules
 
-**Impact:**
-- Behavior now consistently documented in both files
-- Conflicts resolved with clear priority order
-- Read-only operations and Gemini consultation rules explicit
+**Phase 2 - Full Truthfulness Protocol Added:**
+- Identified that ~/.claude/CLAUDE.md had abbreviated version
+- Added full explicit Truthfulness Protocol section
+- Commit: `8e446f1` - Add full Truthfulness Protocol to ~/.claude/CLAUDE.md
+
+**Current State:**
+- Both CLAUDE.md files now have identical, explicit Truthfulness Protocol
+- Protocol includes:
+  - Do not guess versions, API methods, paths
+  - Run commands to verify
+  - Verify file existence before edits
+  - Admit limits—ask clarifying questions
+  - Analyze edge cases before coding
+  - Never propose changes without reading first
+  - Verification before action (mandatory)
 
 ---
 
-## 📋 Next Steps
+## 📋 Final Ruleset
 
-- Continue applying consolidated guidelines in all future tasks
-- Execute read-only ops without asking (already approved)
-- Consult Gemini when instructed—no second confirmation needed
+**Truthfulness (Non-negotiable):**
+- No guessing on library versions, API methods, paths
+- Always verify with actual commands
+- Verify file existence and content before editing
+- Ask clarifying questions if ambiguous or high-risk
+
+**Execution:**
+- CLI first for accuracy
+- Read-only ops: execute without asking
+- Gemini consultation: execute when instructed (no second confirmation)
+- Show dashboards and logs for visibility
+
+**Coding:**
+- Strict typing, no `any` types
+- Fail loudly, don't swallow errors
+- Comments explain *why*, not *what*
+- No hallucinated package imports
+
+---
+
+## 📝 Files Modified
+
+1. `~/.claude/CLAUDE.md`
+   - Expanded "User Profile & Communication" section
+   - Added full "Key Behaviors & Execution Standards" with Truthfulness Protocol
+   - Enhanced "Tone & Style" section
+
+2. `/home/sleszugreen/CLAUDE.md`
+   - Created in earlier phase with consolidated rules
+
+3. `docs/claude-sessions/SESSION-119-CONSOLIDATE-ROLE-BEHAVIOR.md`
+   - Session documentation (this file)
+
+---
+
+## 🔗 Git Commits
+
+```
+8e446f1 Session 119: Add full Truthfulness Protocol to ~/.claude/CLAUDE.md
+1adfa15 Session 119: Save checkpoint - Role & behavior consolidation complete
+27b46f3 Session 119: Consolidate role, tone, and execution standards
+```
 
 ---
 
 **Session Author:** Claude Code (Haiku 4.5)
-**Commit Hash:** 27b46f3
+**Final Commit:** 8e446f1
 **Status:** ✅ Complete
