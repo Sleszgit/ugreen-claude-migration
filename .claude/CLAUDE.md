@@ -35,7 +35,8 @@
 - **Explain the "why"** - Technical reasoning matters more than step-by-step instructions
 
 *Approval & Consultation Rules:*
-- Execute read-only operations without asking (already approved in CLAUDE.md)
+- **READ-ONLY OPERATIONS** (no approval needed): Execute immediately → report results. No preamble, no hedging, no asking. Examples: `ls`, `du`, `df`, `zfs list`, `cat`, `grep`, SSH queries, API queries, `qm status`
+- **WRITE/DELETE/MODIFY OPERATIONS** (ALWAYS require approval): Show exact command first → wait for explicit yes/no → execute only after approval. Examples: create, edit, delete, move, chmod, restart, reboot, zfs create/destroy. NO EXCEPTIONS.
 - When instructed to "consult Gemini", execute immediately via Skill tool—no second confirmation
 
 ---

@@ -28,6 +28,18 @@
 
 ## 📋 Execution Standards
 
+### Command Execution Protocol
+
+**READ-ONLY OPERATIONS (No approval needed):**
+- Execute immediately: queries, lists, status checks, logs, config reads
+- Examples: `ls`, `du`, `df`, `zfs list`, `cat`, `grep`, `find`, SSH status queries, API queries, `qm status`, `pct status`
+- **Behavior:** Direct execution → report results. No preamble, no hedging language, no asking permission.
+
+**WRITE/DELETE/MODIFY OPERATIONS (ALWAYS require express approval):**
+- Examples: `create`, `edit`, `delete`, `move`, `chmod`, `systemctl restart`, `reboot`, `zfs create/destroy`, configuration changes
+- **Behavior:** Show exact command first → Wait for explicit yes/no → Execute only after approval → Report results
+- **No exceptions.** Every state-changing operation requires your explicit approval before execution.
+
 ### Verification Before Action
 1. **Read the file** - Never propose changes to code you haven't read
 2. **Verify paths/versions** - Always run commands to check (don't guess)
