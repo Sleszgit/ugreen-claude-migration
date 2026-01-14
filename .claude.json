@@ -1,5 +1,5 @@
 {
-  "numStartups": 146,
+  "numStartups": 148,
   "theme": "light",
   "tipsHistory": {
     "new-user-warmup": 7,
@@ -27,11 +27,11 @@
     "mobile-app": 138,
     "custom-agents": 141,
     "permissions": 144,
-    "rename-conversation": 132,
-    "custom-commands": 132,
+    "rename-conversation": 147,
+    "custom-commands": 147,
     "git-worktrees": 143
   },
-  "promptQueueUseCount": 388,
+  "promptQueueUseCount": 391,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,
@@ -152,29 +152,29 @@
         "packageManager": null
       },
       "hasCompletedProjectOnboarding": true,
-      "lastCost": 0.39490285,
-      "lastAPIDuration": 306437,
-      "lastAPIDurationWithoutRetries": 306411,
-      "lastToolDuration": 10017,
-      "lastDuration": 3424174,
-      "lastLinesAdded": 96,
-      "lastLinesRemoved": 1,
-      "lastTotalInputTokens": 16917,
-      "lastTotalOutputTokens": 23864,
-      "lastTotalCacheCreationInputTokens": 68073,
-      "lastTotalCacheReadInputTokens": 1735746,
+      "lastCost": 0.5926068500000001,
+      "lastAPIDuration": 254523,
+      "lastAPIDurationWithoutRetries": 254485,
+      "lastToolDuration": 207640,
+      "lastDuration": 3926078,
+      "lastLinesAdded": 367,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 22046,
+      "lastTotalOutputTokens": 20725,
+      "lastTotalCacheCreationInputTokens": 212673,
+      "lastTotalCacheReadInputTokens": 2010946,
       "lastTotalWebSearchRequests": 0,
       "lastModelUsage": {
         "claude-haiku-4-5-20251001": {
-          "inputTokens": 16917,
-          "outputTokens": 23864,
-          "cacheReadInputTokens": 1735746,
-          "cacheCreationInputTokens": 68073,
+          "inputTokens": 22046,
+          "outputTokens": 20725,
+          "cacheReadInputTokens": 2010946,
+          "cacheCreationInputTokens": 212673,
           "webSearchRequests": 0,
-          "costUSD": 0.39490285
+          "costUSD": 0.5926068500000001
         }
       },
-      "lastSessionId": "aacb05f3-bfc2-4759-907a-23e3ab1daaad",
+      "lastSessionId": "d1918a74-b488-485c-9325-ff3114631e22",
       "exampleFilesGeneratedAt": 1768013683948
     }
   },
@@ -182,7 +182,7 @@
     "20e1bfdc-0610-4a84-aec8-470c2a13f487": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1768410715206
+      "timestamp": 1768417493521
     }
   },
   "feedbackSurveyState": {
