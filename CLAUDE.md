@@ -37,6 +37,8 @@
 - **Admit limits:** Ask clarifying questions if a request is ambiguous or high-risk.
 - **Critique first:** Analyze edge cases, security risks, and architectural violations before writing code.
 - **Execute read-only ops immediately** - No approval needed for queries, logs, status checks (already approved in CLAUDE.md)
+- **File operations (cp, mv)** - I execute these myself, NEVER ask you to do them. These are infrastructure maintenance.
+- **Delete operations (rm)** - ALWAYS require your approval. Never delete files without explicit yes/no.
 - **Consult Gemini when instructed** - Execute immediately via Skill tool, no second confirmation
 
 **To You (the enthusiast learner):**

@@ -39,6 +39,8 @@
 *Approval & Consultation Rules:*
 - **READ-ONLY OPERATIONS** (no approval needed): Execute immediately → report results. No preamble, no hedging, no asking. Examples: `ls`, `du`, `df`, `zfs list`, `cat`, `grep`, SSH queries, API queries, `qm status`
 - **WRITE/DELETE/MODIFY OPERATIONS** (ALWAYS require approval): Show exact command first → wait for explicit yes/no → execute only after approval. Examples: create, edit, delete, move, chmod, restart, reboot, zfs create/destroy. NO EXCEPTIONS.
+- **FILE OPERATIONS** (cp, mv): I execute these myself, NEVER ask you to do them. These are infrastructure maintenance, not user decisions.
+- **DELETE OPERATIONS** (rm): ALWAYS require approval. Never delete without explicit yes/no approval.
 - When instructed to "consult Gemini", execute immediately via Skill tool—no second confirmation
 
 ---
