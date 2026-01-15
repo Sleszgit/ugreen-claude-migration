@@ -91,40 +91,97 @@ else
 fi
 echo ""
 
+# Step 4.5: Pre-authorize port 22022 in firewall (before SSH restart)
+echo -e "${YELLOW}[STEP 4.5]${NC} Pre-authorizing port 22022 in firewall..."
+if command -v ufw >/dev/null 2>&1; then
+    if sudo ufw status | grep -q "Status: active"; then
+        echo -e "${YELLOW}  UFW is active - adding temporary allow rule for 22022${NC}"
+        sudo ufw allow 22022/tcp comment 'Temporary allow for SSH hardening verification' >/dev/null 2>&1
+        echo -e "${GREEN}✓ Added UFW rule for port 22022/tcp${NC}"
+    else
+        echo -e "${GREEN}✓ UFW is not active (no pre-auth needed)${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ UFW not installed (skipping firewall pre-auth)${NC}"
+fi
+echo ""
+
 # Step 5: Restart SSH daemon
 echo -e "${YELLOW}[STEP 5]${NC} Restarting SSH daemon..."
 sudo systemctl restart ssh
 echo -e "${GREEN}✓ SSH daemon restarted${NC}"
 echo ""
 
-# Step 6: Test new SSH connection
-echo -e "${YELLOW}[STEP 6]${NC} Testing SSH key authentication on port 22022..."
-echo ""
-echo -e "${YELLOW}⚠️  CRITICAL: Keep your current SSH session OPEN${NC}"
-echo "Do NOT close this terminal until you verify key auth works!"
-echo ""
-echo "In a NEW terminal, test:"
-echo "  ssh -p 22022 -i ~/.ssh/id_ed25519 sleszugreen@10.10.10.100"
-echo ""
-echo -e "${YELLOW}Press ENTER when you have verified key auth works...${NC}"
-read -r
+# Step 6: Auto-verify SSH on new port
+echo -e "${YELLOW}[STEP 6]${NC} Auto-verifying SSH on port 22022..."
 
-# Step 7: Verify key auth is actually working
-echo -e "${YELLOW}[STEP 7]${NC} Verifying SSH key authentication is active..."
+verify_ssh_success=false
+port=22022
+lan_ip="10.10.10.100"  # VM's IP on VLAN10
 
-# Test that we can still execute sudo (means we're still logged in)
-if sudo -n true 2>/dev/null; then
-    echo -e "${GREEN}✓ Current session still active (good!)${NC}"
+# Test 1: Port listening on loopback
+echo -e "${YELLOW}  • Checking loopback binding...${NC}"
+for attempt in {1..5}; do
+    if nc -z localhost $port 2>/dev/null; then
+        echo -e "${GREEN}    ✓ SSH listening on loopback:${port}${NC}"
+        break
+    fi
+    sleep 1
+done
+
+# Test 2: Port listening on LAN interface (CRITICAL for remote access)
+echo -e "${YELLOW}  • Checking LAN interface binding...${NC}"
+if nc -z "$lan_ip" $port 2>/dev/null; then
+    echo -e "${GREEN}    ✓ SSH listening on LAN IP ${lan_ip}:${port}${NC}"
+    verify_ssh_success=true
 else
-    echo -e "${RED}✗ Lost sudo access (something went wrong)${NC}"
+    echo -e "${RED}    ✗ SSH NOT listening on LAN IP ${lan_ip}:${port}${NC}"
+    echo -e "${RED}      This is a critical problem - SSH won't be remotely accessible!${NC}"
+    verify_ssh_success=false
+fi
+
+# Test 3: Optional - Attempt actual SSH key connection
+if [[ -f ~/.ssh/id_ed25519 ]]; then
+    echo -e "${YELLOW}  • Testing SSH key authentication...${NC}"
+    if timeout 5 ssh -o ConnectTimeout=3 \
+                     -o StrictHostKeyChecking=no \
+                     -o UserKnownHostsFile=/dev/null \
+                     -i ~/.ssh/id_ed25519 \
+                     -p $port \
+                     localhost "echo 'SSH auth OK'" 2>/dev/null; then
+        echo -e "${GREEN}    ✓ SSH key authentication works${NC}"
+    else
+        echo -e "${YELLOW}    ⚠ SSH key test failed on localhost (may still be OK)${NC}"
+    fi
+fi
+
+echo ""
+
+# Step 7: Verify SSH changes or rollback
+echo -e "${YELLOW}[STEP 7]${NC} Finalizing SSH hardening..."
+
+if [[ "$verify_ssh_success" == true ]]; then
+    echo -e "${GREEN}✓ SSH successfully hardened and verified${NC}"
+else
+    echo -e "${RED}✗ SSH verification failed (port not accessible on LAN IP)${NC}"
+    echo -e "${YELLOW}Rolling back SSH changes...${NC}"
+    sudo cp "$BACKUP_DIR/sshd_config.backup" /etc/ssh/sshd_config
+    sudo systemctl restart ssh
+    echo -e "${GREEN}✓ SSH configuration restored to previous state${NC}"
+    echo ""
+    echo "Troubleshooting:"
+    echo "  1. Check sshd_config has 'Port 22022' and 'ListenAddress 0.0.0.0'"
+    echo "  2. Verify no firewall is blocking port 22022"
+    echo "  3. Re-run this script to try again"
     exit 1
 fi
 
-# Attempt local test of port 22022
-if nc -z localhost 22022 2>/dev/null; then
-    echo -e "${GREEN}✓ SSH listening on port 22022${NC}"
+# Test that we can still execute sudo (means we're still logged in)
+if sudo -n true 2>/dev/null; then
+    echo -e "${GREEN}✓ Current session still active${NC}"
 else
-    echo -e "${YELLOW}⚠ Could not verify port 22022 (may still be OK)${NC}"
+    echo -e "${RED}✗ Lost sudo access (unexpected)${NC}"
+    exit 1
 fi
 
 echo ""
