@@ -65,6 +65,8 @@
 
 **Status:** ✅ Configured and Working
 
+### UGREEN SMB Share (192.168.40.60)
+
 **Share Configuration:**
 | Property | Value |
 |----------|-------|
@@ -78,7 +80,7 @@
 - **Server:** `\\192.168.40.60`
 - **Share:** `\\192.168.40.60\ugreen20tb`
 - **Map Drive:** `net use Z: \\192.168.40.60\ugreen20tb /user:sleszugreen /persistent:yes`
-- **Access From:** 192.168.99.6 (Windows desktop)
+- **Access From:** 192.168.99.x (Windows desktop)
 
 **Firewall Rules (required for cross-subnet access):**
 
@@ -97,6 +99,138 @@ sudo systemctl restart pve-firewall.service
 **Verify rules are applied:**
 ```bash
 sudo iptables -L -n | grep 445
+```
+
+---
+
+### Homelab SMB Shares (192.168.40.40)
+
+**Status:** ✅ Fully accessible (Session 128)
+
+**Share Configuration:**
+| Property | FilmsHomelab | SeriesHomelab |
+|----------|--------------|---------------|
+| Path | `/Seagate-20TB-mirror/FilmsHomelab` | `/Seagate-20TB-mirror/SeriesHomelab` |
+| User | samba-homelab | samba-homelab |
+| Protocol | SMB (Samba) | SMB (Samba) |
+| Permissions | 0664/0775 | 0664/0775 |
+| Browseable | Yes | Yes |
+| Read Only | No | No |
+
+**Windows Access:**
+- **Server:** `\\192.168.40.40`
+- **FilmsHomelab:** `\\192.168.40.40\FilmsHomelab` (Drive I)
+- **SeriesHomelab:** `\\192.168.40.40\SeriesHomelab` (Drive J)
+- **Access From:** 192.168.99.x (Windows desktop, VLAN 99)
+- **Authentication:** User `samba-homelab`
+
+**Map Drive Commands:**
+```batch
+net use I: \\192.168.40.40\FilmsHomelab /user:samba-homelab /persistent:yes
+net use J: \\192.168.40.40\SeriesHomelab /user:samba-homelab /persistent:yes
+```
+
+#### Critical Setup Requirements for Cross-VLAN SMB
+
+This pattern has three independent failure points that must all be fixed:
+
+**1. Filesystem Permissions - Parent Directory Traversal**
+
+Samba requires execute (+x) permission on ALL directories in the path, including parent directories. A common gotcha:
+
+```bash
+# PROBLEM: Parent missing +x, target has correct perms
+/Seagate-20TB-mirror/     ← Missing +x (755 → 755)
+└── FilmsHomelab/         ← Has +x (755)
+
+# FIX: Grant execute permission to parent
+sudo chmod a+x /Seagate-20TB-mirror
+
+# Verify with ls -ld (4th character should be x)
+ls -ld /Seagate-20TB-mirror
+# drwxr-xr-x (755 - others can traverse)
+```
+
+**Why this matters:** Without parent directory execute permission, Samba cannot traverse to the subdirectory. SMB clients will get "access denied" or "network path not found" even though:
+- The share definition is correct
+- The target directory has correct permissions
+- The Samba service is running
+- Port 445 is open
+
+**2. Firewall Rules - Input and Forwarding**
+
+Both SMB ports must be allowed on the Homelab Proxmox host:
+
+```bash
+# Allow incoming SMB traffic on port 445
+sudo iptables -I INPUT -p tcp --dport 445 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 139 -j ACCEPT
+
+# Make persistent (survive reboots)
+sudo apt-get install iptables-persistent
+sudo netfilter-persistent save
+
+# Verify
+sudo iptables -L INPUT -v | grep 445
+```
+
+**Why this is needed:** Default Proxmox firewall blocks SMB ports to prevent ransomware. Cross-VLAN access (Windows VLAN99 → Homelab VLAN40) requires explicit allow rules even when Samba is listening on 0.0.0.0.
+
+**3. Windows Registry Cleanup - Ghost Drive Letters**
+
+Windows retains stale connection keys even after `net use /delete`. These must be manually removed:
+
+```batch
+REM Delete ghost drive letter keys from registry
+reg delete HKCU\Network\I /f
+reg delete HKCU\Network\J /f
+
+REM Restart Windows to clear kernel-level handles
+shutdown /r /t 0
+```
+
+**Why this matters:** Windows kernel retains connection handles across `net use /delete` and `logoff`. Registry entries persist until manually removed. This causes:
+- Error 85: "Local device name is already in use"
+- Error 1202: "The local device name has a remembered connection"
+- Inability to reuse drive letters even though they appear free
+
+#### Troubleshooting Cross-VLAN SMB Access
+
+**If Windows cannot connect despite Samba running:**
+
+```bash
+# On Homelab, verify all three layers:
+
+# Layer 1: Filesystem permissions
+ls -ld /Seagate-20TB-mirror  # Should show 755 (x for others)
+ls -ld /Seagate-20TB-mirror/FilmsHomelab  # Should show 755
+
+# Layer 2: Firewall rules
+sudo iptables -L INPUT -v | grep 445
+# Should show: ACCEPT  tcp  -- any   any  anywhere  anywhere  tcp dpt:445
+
+# Layer 3: Samba configuration
+sudo testparm  # Should pass validation
+sudo smbclient -L \\127.0.0.1 -U samba-homelab  # Should list shares
+```
+
+**If Layer 1 fails (missing parent +x):**
+```bash
+sudo chmod a+x /Seagate-20TB-mirror
+sudo systemctl restart smbd nmbd
+```
+
+**If Layer 2 fails (firewall blocking):**
+```bash
+sudo iptables -I INPUT -p tcp --dport 445 -j ACCEPT
+sudo netfilter-persistent save
+```
+
+**If Layer 3 fails (SMB config):**
+```bash
+sudo testparm  # Will show specific config errors
+# Fix config, then:
+sudo systemctl restart smbd nmbd
 ```
 
 ---
@@ -288,11 +422,28 @@ Check these in order:
 
 **Windows can't access Samba?**
 
-Check these in order:
+For UGREEN (192.168.40.60):
 1. Firewall rules exist: `sudo iptables -L -n | grep 445`
 2. Samba service running: `sudo systemctl status smbd`
 3. User has Samba password: `sudo smbpasswd -L | grep sleszugreen`
 4. Test from Windows: `net use \\192.168.40.60\ugreen20tb /user:sleszugreen`
+
+For Homelab (192.168.40.40) - **THREE-LAYER DIAGNOSIS:**
+
+**CRITICAL:** Homelab SMB has three independent failure points. Check all three:
+1. **Filesystem Permissions:** `ls -ld /Seagate-20TB-mirror` must show "x" for others (755 or drwxr-xr-x)
+   - Without this, Samba cannot traverse to subdirectories
+   - Fix: `sudo chmod a+x /Seagate-20TB-mirror`
+2. **Firewall Rules:** `sudo iptables -L INPUT -v | grep 445` must show ACCEPT rule
+   - Default Proxmox firewall blocks SMB ports
+   - Fix: `sudo iptables -I INPUT -p tcp --dport 445 -j ACCEPT` + `sudo netfilter-persistent save`
+3. **Samba Configuration:** `sudo testparm` must pass validation
+   - User must exist: `sudo smbpasswd -L | grep samba-homelab`
+   - Share path must exist and be readable
+
+After fixing any layer, restart: `sudo systemctl restart smbd nmbd`
+
+See "Homelab SMB Shares" section above for detailed diagnostic protocol.
 
 ---
 
