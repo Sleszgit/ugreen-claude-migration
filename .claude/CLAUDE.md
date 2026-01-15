@@ -23,10 +23,12 @@
 
 *Truthfulness Protocol:*
 - Do not guess library versions, API methods, or paths. Run commands to verify (e.g., check `package.json`, grep source, read docs)
-- Verify file existence and content before attempting edits
+- **Verify file existence and content before attempting edits**
+- **Verify infrastructure facts (mounts, IPs, services) by checking directly - don't assume**
 - Admit limits: ask clarifying questions if a request is ambiguous or high-risk
 - Analyze edge cases, security risks, and architectural violations before writing code
 - Verification before action: never propose changes to code you haven't read
+- **If unsure about infrastructure state → SSH to target machine and check immediately**
 
 *Execution & Visibility:*
 - **CLI first** - Prefer CLI tools over web UIs for accuracy and verification
@@ -38,6 +40,40 @@
 - **READ-ONLY OPERATIONS** (no approval needed): Execute immediately → report results. No preamble, no hedging, no asking. Examples: `ls`, `du`, `df`, `zfs list`, `cat`, `grep`, SSH queries, API queries, `qm status`
 - **WRITE/DELETE/MODIFY OPERATIONS** (ALWAYS require approval): Show exact command first → wait for explicit yes/no → execute only after approval. Examples: create, edit, delete, move, chmod, restart, reboot, zfs create/destroy. NO EXCEPTIONS.
 - When instructed to "consult Gemini", execute immediately via Skill tool—no second confirmation
+
+---
+
+## 🚨 CRITICAL: Script Placement Rule (ABSOLUTE)
+
+**THIS MUST BE FOLLOWED WITHOUT EXCEPTION:**
+
+**WHERE TO CREATE SCRIPTS:**
+- ✅ **ALWAYS** create scripts in: `/mnt/lxc102scripts/` (in LXC 102)
+- ❌ **NEVER** create scripts in `/home/sleszugreen/scripts/` or other locations
+- ❌ **NEVER** assume I'll move scripts later - it's YOUR job to put them in the right place
+
+**WHY THIS MATTERS:**
+- `/mnt/lxc102scripts/` is a **bind mount** accessible to ALL machines in the network
+- VM100, Homelab, and other systems can access scripts at:
+  - `/nvme2tb/lxc102scripts/` (from Proxmox host)
+  - `/mnt/lxc102scripts/` (from other containers/VMs if mounted)
+- Scripts placed elsewhere are **INACCESSIBLE** to target machines
+
+**EXECUTION PATTERN (ALWAYS):**
+1. Create script in `/mnt/lxc102scripts/` (in LXC102)
+2. User SSHes to **TARGET MACHINE** (e.g., VM100, Homelab)
+3. User executes script **ON TARGET MACHINE**: `sudo bash /nvme2tb/lxc102scripts/scriptname.sh`
+4. I **NEVER** execute infrastructure scripts myself
+
+**VERIFY BEFORE WRITING:**
+- Before creating ANY script, ask: "Will this run on LXC102 or another machine?"
+- If on another machine → **MUST** go in `/mnt/lxc102scripts/`
+- If in LXC102 itself → Can go in `/mnt/lxc102scripts/` or local location
+
+**IF YOU FORGET THIS:**
+- Scripts won't be accessible to target machines
+- You'll have to ask me for the correct path (frustrating!)
+- Work gets delayed and repeated
 
 ---
 
@@ -79,8 +115,14 @@
 - **192.168.40.60** = UGREEN (where I run)
 - **192.168.40.40** = HOMELAB (main Proxmox server)
 
+**Mount Points (CRITICAL - Scripts go here!):**
+- **LXC 102:** `/mnt/lxc102scripts/` ← Scripts created HERE (local path)
+- **VM100:** `/mnt/lxc102scripts/` ← NFS mount to `10.10.10.60:/nvme2tb/lxc102scripts` (RW)
+- **Homelab:** `/mnt/lxc102scripts/` ← NFS mount (if configured)
+
 **Full topology:** See `~/.claude/ENVIRONMENT.yaml`
 **Status check:** `~/scripts/infrastructure/check-env-status.sh`
+**Verify NFS on any machine:** `mount | grep lxc102scripts`
 
 ---
 

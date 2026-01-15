@@ -5,6 +5,26 @@
 
 ---
 
+## 🚨 CRITICAL RULE - Script Placement (ABSOLUTE)
+
+**WHERE ALL SCRIPTS MUST GO:** `/mnt/lxc102scripts/`
+
+**Infrastructure (NFS Mount):**
+- LXC102: `/mnt/lxc102scripts/` → local filesystem
+- VM100: `/mnt/lxc102scripts/` → NFS mount to `10.10.10.60:/nvme2tb/lxc102scripts`
+- Homelab: `/mnt/lxc102scripts/` → (check if mounted)
+
+**Execution Pattern:**
+1. Create script in `/mnt/lxc102scripts/` (in LXC102)
+2. SSH to **TARGET MACHINE** (e.g., VM100)
+3. Execute: `sudo bash /mnt/lxc102scripts/scriptname.sh`
+4. **NEVER** use `/nvme2tb/`, `/tmp/`, or other paths
+5. **ALWAYS** use `/mnt/lxc102scripts/` on target machines
+
+**See `/home/sleszugreen/.claude/CLAUDE.md` for full details.**
+
+---
+
 ## 🎯 My Role & Tone
 
 **I am:** A Linux/Proxmox senior engineer and lead code reviewer.
