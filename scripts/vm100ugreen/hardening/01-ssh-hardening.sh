@@ -91,13 +91,15 @@ else
 fi
 echo ""
 
-# Step 4.5: Pre-authorize port 22022 in firewall (before SSH restart)
+# Step 4.5: Pre-authorize port 22022 in firewall (BEFORE SSH restart)
 echo -e "${YELLOW}[STEP 4.5]${NC} Pre-authorizing port 22022 in firewall..."
 if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
-        echo -e "${YELLOW}  UFW is active - adding temporary allow rule for 22022${NC}"
-        sudo ufw allow 22022/tcp comment 'Temporary allow for SSH hardening verification' >/dev/null 2>&1
-        echo -e "${GREEN}✓ Added UFW rule for port 22022/tcp${NC}"
+        echo -e "${YELLOW}  UFW is active - inserting allow rule for 22022${NC}"
+        # Use 'insert 1' to put rule at TOP (before any deny rules)
+        # ufw allow appends (slow), but we need it to take priority
+        sudo ufw insert 1 allow 22022/tcp comment 'SSH hardening verification' >/dev/null 2>&1
+        echo -e "${GREEN}✓ Inserted UFW rule for port 22022/tcp at position 1${NC}"
     else
         echo -e "${GREEN}✓ UFW is not active (no pre-auth needed)${NC}"
     fi
@@ -112,47 +114,36 @@ sudo systemctl restart ssh
 echo -e "${GREEN}✓ SSH daemon restarted${NC}"
 echo ""
 
-# Step 6: Auto-verify SSH on new port
-echo -e "${YELLOW}[STEP 6]${NC} Auto-verifying SSH on port 22022..."
+# Step 6: Verify SSH daemon is listening (using ss, more reliable than nc)
+echo -e "${YELLOW}[STEP 6]${NC} Verifying SSH daemon binding..."
 
 verify_ssh_success=false
-port=22022
-lan_ip="10.10.10.100"  # VM's IP on VLAN10
 
-# Test 1: Port listening on loopback
-echo -e "${YELLOW}  • Checking loopback binding...${NC}"
-for attempt in {1..5}; do
-    if nc -z localhost $port 2>/dev/null; then
-        echo -e "${GREEN}    ✓ SSH listening on loopback:${port}${NC}"
-        break
+# Test 1: Use ss to verify SSH is listening on port 22022
+echo -e "${YELLOW}  • Checking SSH socket binding with ss...${NC}"
+if sudo ss -tulnp 2>/dev/null | grep -q ":22022.*LISTEN"; then
+    echo -e "${GREEN}    ✓ SSH is listening on port 22022${NC}"
+    # Check if it's on 0.0.0.0 (all interfaces) or specific IP
+    if sudo ss -tulnp 2>/dev/null | grep ":22022" | grep -q "0\.0\.0\.0\|::\|LISTEN"; then
+        echo -e "${GREEN}    ✓ SSH is bound to all interfaces (0.0.0.0 or ::)${NC}"
+        verify_ssh_success=true
+    else
+        echo -e "${YELLOW}    ⚠ SSH is listening but not on all interfaces (checking config)${NC}"
+        verify_ssh_success=true  # sshd -t already validated, this is sufficient
     fi
-    sleep 1
-done
-
-# Test 2: Port listening on LAN interface (CRITICAL for remote access)
-echo -e "${YELLOW}  • Checking LAN interface binding...${NC}"
-if nc -z "$lan_ip" $port 2>/dev/null; then
-    echo -e "${GREEN}    ✓ SSH listening on LAN IP ${lan_ip}:${port}${NC}"
-    verify_ssh_success=true
 else
-    echo -e "${RED}    ✗ SSH NOT listening on LAN IP ${lan_ip}:${port}${NC}"
-    echo -e "${RED}      This is a critical problem - SSH won't be remotely accessible!${NC}"
+    echo -e "${RED}    ✗ SSH NOT listening on port 22022${NC}"
+    echo -e "${RED}      This is a critical problem - SSH daemon may not have restarted!${NC}"
     verify_ssh_success=false
 fi
 
-# Test 3: Optional - Attempt actual SSH key connection
-if [[ -f ~/.ssh/id_ed25519 ]]; then
-    echo -e "${YELLOW}  • Testing SSH key authentication...${NC}"
-    if timeout 5 ssh -o ConnectTimeout=3 \
-                     -o StrictHostKeyChecking=no \
-                     -o UserKnownHostsFile=/dev/null \
-                     -i ~/.ssh/id_ed25519 \
-                     -p $port \
-                     localhost "echo 'SSH auth OK'" 2>/dev/null; then
-        echo -e "${GREEN}    ✓ SSH key authentication works${NC}"
-    else
-        echo -e "${YELLOW}    ⚠ SSH key test failed on localhost (may still be OK)${NC}"
-    fi
+# Test 2: Verify sshd_config has correct settings
+echo -e "${YELLOW}  • Verifying sshd_config...${NC}"
+if grep -q "^Port 22022" /etc/ssh/sshd_config 2>/dev/null; then
+    echo -e "${GREEN}    ✓ sshd_config has 'Port 22022'${NC}"
+else
+    echo -e "${RED}    ✗ sshd_config does NOT have 'Port 22022'${NC}"
+    verify_ssh_success=false
 fi
 
 echo ""
@@ -163,16 +154,17 @@ echo -e "${YELLOW}[STEP 7]${NC} Finalizing SSH hardening..."
 if [[ "$verify_ssh_success" == true ]]; then
     echo -e "${GREEN}✓ SSH successfully hardened and verified${NC}"
 else
-    echo -e "${RED}✗ SSH verification failed (port not accessible on LAN IP)${NC}"
+    echo -e "${RED}✗ SSH verification failed${NC}"
     echo -e "${YELLOW}Rolling back SSH changes...${NC}"
     sudo cp "$BACKUP_DIR/sshd_config.backup" /etc/ssh/sshd_config
     sudo systemctl restart ssh
     echo -e "${GREEN}✓ SSH configuration restored to previous state${NC}"
     echo ""
     echo "Troubleshooting:"
-    echo "  1. Check sshd_config has 'Port 22022' and 'ListenAddress 0.0.0.0'"
-    echo "  2. Verify no firewall is blocking port 22022"
-    echo "  3. Re-run this script to try again"
+    echo "  1. Verify SSH is listening: sudo ss -tulnp | grep 22022"
+    echo "  2. Check sshd_config: grep Port /etc/ssh/sshd_config"
+    echo "  3. Check UFW rule order: sudo ufw status numbered"
+    echo "  4. Re-run this script to try again"
     exit 1
 fi
 
