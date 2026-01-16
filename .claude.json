@@ -1,20 +1,20 @@
 {
-  "numStartups": 148,
+  "numStartups": 153,
   "theme": "light",
   "tipsHistory": {
     "new-user-warmup": 7,
-    "plan-mode-for-complex-tasks": 144,
-    "terminal-setup": 143,
-    "memory-command": 138,
+    "plan-mode-for-complex-tasks": 149,
+    "terminal-setup": 153,
+    "memory-command": 153,
     "theme-command": 142,
-    "colorterm-truecolor": 122,
-    "status-line": 127,
+    "colorterm-truecolor": 152,
+    "status-line": 152,
     "stickers-command": 143,
     "prompt-queue": 1,
     "enter-to-steer-in-relatime": 143,
     "todo-list": 143,
-    "install-github-app": 143,
-    "install-slack-app": 143,
+    "install-github-app": 153,
+    "install-slack-app": 153,
     "drag-and-drop-images": 144,
     "double-esc-code-restore": 144,
     "continue": 144,
@@ -23,15 +23,15 @@
     "config-thinking-mode": 114,
     "ultrathink-keyword": 144,
     "btw-side-question": 107,
-    "web-app": 138,
-    "mobile-app": 138,
+    "web-app": 153,
+    "mobile-app": 153,
     "custom-agents": 141,
     "permissions": 144,
     "rename-conversation": 147,
     "custom-commands": 147,
-    "git-worktrees": 143
+    "git-worktrees": 153
   },
-  "promptQueueUseCount": 391,
+  "promptQueueUseCount": 392,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,
@@ -76,7 +76,7 @@
       "maxQueueSize": 8192
     },
     "tengu_event_sampling_config": {},
-    "tengu_pid_based_version_locking": false,
+    "tengu_pid_based_version_locking": true,
     "tengu-top-of-feed-tip": {
       "tip": "",
       "color": ""
@@ -88,11 +88,14 @@
     "tengu_post_compact_survey": false,
     "tengu_streaming_tool_execution2": false,
     "tengu_code_diff_cli": true,
-    "enhanced_telemetry_beta": false
+    "enhanced_telemetry_beta": false,
+    "tengu_session_memory": false,
+    "tengu_bash_haiku_prefetch": true,
+    "tengu_plan_mode_interview_phase": false
   },
-  "lastReleaseNotesSeen": "2.1.7",
+  "lastReleaseNotesSeen": "2.1.9",
   "userID": "deba34e3d6d4bb79f629ddfe430d64d5f6e70f5e3be67251e07172fe5ea17df9",
-  "changelogLastFetched": 1768400360310,
+  "changelogLastFetched": 1768575601079,
   "firstStartTime": "2025-12-18T04:35:54.872Z",
   "sonnet45MigrationComplete": true,
   "sonnet45MigrationTimestamp": 1766032554890,
@@ -152,29 +155,29 @@
         "packageManager": null
       },
       "hasCompletedProjectOnboarding": true,
-      "lastCost": 0.5926068500000001,
-      "lastAPIDuration": 254523,
-      "lastAPIDurationWithoutRetries": 254485,
-      "lastToolDuration": 207640,
-      "lastDuration": 3926078,
-      "lastLinesAdded": 367,
+      "lastCost": 2.9524430500000007,
+      "lastAPIDuration": 1300187,
+      "lastAPIDurationWithoutRetries": 1299943,
+      "lastToolDuration": 367835,
+      "lastDuration": 8311768,
+      "lastLinesAdded": 0,
       "lastLinesRemoved": 0,
-      "lastTotalInputTokens": 22046,
-      "lastTotalOutputTokens": 20725,
-      "lastTotalCacheCreationInputTokens": 212673,
-      "lastTotalCacheReadInputTokens": 2010946,
+      "lastTotalInputTokens": 443309,
+      "lastTotalOutputTokens": 85132,
+      "lastTotalCacheCreationInputTokens": 579469,
+      "lastTotalCacheReadInputTokens": 13591378,
       "lastTotalWebSearchRequests": 0,
       "lastModelUsage": {
         "claude-haiku-4-5-20251001": {
-          "inputTokens": 22046,
-          "outputTokens": 20725,
-          "cacheReadInputTokens": 2010946,
-          "cacheCreationInputTokens": 212673,
+          "inputTokens": 443309,
+          "outputTokens": 85132,
+          "cacheReadInputTokens": 13591378,
+          "cacheCreationInputTokens": 579469,
           "webSearchRequests": 0,
-          "costUSD": 0.5926068500000001
+          "costUSD": 2.9524430500000007
         }
       },
-      "lastSessionId": "d1918a74-b488-485c-9325-ff3114631e22",
+      "lastSessionId": "a574815e-ed48-4b07-9623-ef249aad30ad",
       "exampleFilesGeneratedAt": 1768013683948
     }
   },
@@ -182,7 +185,7 @@
     "20e1bfdc-0610-4a84-aec8-470c2a13f487": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1768417493521
+      "timestamp": 1768592472088
     }
   },
   "feedbackSurveyState": {
@@ -220,7 +223,7 @@
   "groveConfigCache": {
     "e9fa80ab-8815-4c7d-9a44-1251ba76d529": {
       "grove_enabled": true,
-      "timestamp": 1768400358698
+      "timestamp": 1768575599342
     }
   },
   "skillUsage": {
