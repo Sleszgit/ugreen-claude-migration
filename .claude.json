@@ -1,5 +1,5 @@
 {
-  "numStartups": 158,
+  "numStartups": 159,
   "theme": "light",
   "tipsHistory": {
     "new-user-warmup": 7,
@@ -155,29 +155,29 @@
         "packageManager": null
       },
       "hasCompletedProjectOnboarding": true,
-      "lastCost": 0.2863404,
-      "lastAPIDuration": 99066,
-      "lastAPIDurationWithoutRetries": 99056,
-      "lastToolDuration": 6160,
-      "lastDuration": 1704978,
-      "lastLinesAdded": 0,
+      "lastCost": 1.2968334499999992,
+      "lastAPIDuration": 653271,
+      "lastAPIDurationWithoutRetries": 653149,
+      "lastToolDuration": 45201,
+      "lastDuration": 1253217,
+      "lastLinesAdded": 361,
       "lastLinesRemoved": 0,
-      "lastTotalInputTokens": 24112,
-      "lastTotalOutputTokens": 7010,
-      "lastTotalCacheCreationInputTokens": 126784,
-      "lastTotalCacheReadInputTokens": 686984,
+      "lastTotalInputTokens": 74596,
+      "lastTotalOutputTokens": 43775,
+      "lastTotalCacheCreationInputTokens": 232921,
+      "lastTotalCacheReadInputTokens": 7122112,
       "lastTotalWebSearchRequests": 0,
       "lastModelUsage": {
         "claude-haiku-4-5-20251001": {
-          "inputTokens": 24112,
-          "outputTokens": 7010,
-          "cacheReadInputTokens": 686984,
-          "cacheCreationInputTokens": 126784,
+          "inputTokens": 74596,
+          "outputTokens": 43775,
+          "cacheReadInputTokens": 7122112,
+          "cacheCreationInputTokens": 232921,
           "webSearchRequests": 0,
-          "costUSD": 0.2863404
+          "costUSD": 1.2968334499999992
         }
       },
-      "lastSessionId": "76f4eb1a-1749-4464-8fed-06b8294bb7db",
+      "lastSessionId": "1c508934-9ad8-4269-85e6-f87da55261d6",
       "exampleFilesGeneratedAt": 1768624355458
     }
   },
